@@ -24,7 +24,7 @@ export function CoursesPage() {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Courses</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Courses you are currently enrolled in</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">{courses.length} course{courses.length !== 1 ? 's' : ''} under your program</p>
       </div>
 
       {loading ? (
