@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { programService } from '@/services/programService';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import toast from 'react-hot-toast';
 
@@ -26,6 +27,16 @@ export function ProfilePage() {
   const { profile, updateProfile, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [programName, setProgramName] = useState('');
+
+  useEffect(() => {
+    if (profile?.program) {
+      programService.getPrograms().then((programs) => {
+        const p = programs.find((p: any) => p.id === profile.program);
+        if (p) setProgramName(p.name);
+      });
+    }
+  }, [profile?.program]);
 
   const {
     register,
@@ -106,7 +117,7 @@ export function ProfilePage() {
               <BookOpen className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Program</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile?.program}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{programName || profile?.program}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
