@@ -44,18 +44,13 @@ export function MarkAttendancePage() {
     try {
       const session = await sessionService.getSessionByCode(data.code.toUpperCase());
 
-      // DEBUG: alert all session fields
-      window.alert('SESSION FOUND:\n\n' + JSON.stringify(session, null, 2));
-
       if (!session) {
-        window.alert('BRANCH 1: session is null/undefined');
         toast.error('Session not found. Please check your code.');
         setLoading(false);
         return;
       }
 
       if (!session.is_active) {
-        window.alert('BRANCH 2: is_active = ' + session.is_active);
         toast.error('Session is no longer active.');
         setLoading(false);
         return;
@@ -63,7 +58,6 @@ export function MarkAttendancePage() {
 
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      window.alert('BRANCH 3 (date check):\nsession_date=' + session.session_date + '\ntoday=' + today + '\nresult=' + (session.session_date < today));
       if (session.session_date < today) {
         toast.error('Session date has passed.');
         setLoading(false);
@@ -72,26 +66,21 @@ export function MarkAttendancePage() {
 
       const alreadyAttended = await attendanceService.checkAttendance(session.id, profile.id);
       if (alreadyAttended) {
-        window.alert('BRANCH 4: already attended');
         toast.error('You have already marked attendance for this session.');
         setLoading(false);
         return;
       }
 
-      window.alert('BRANCH 5: about to mark attendance');
       const { error } = await attendanceService.markAttendance(profile.id, session.id);
       if (error) {
-        window.alert('BRANCH 6: markAttendance error: ' + error.message);
         toast.error(error.message);
       } else {
-        window.alert('BRANCH 7: SUCCESS!');
         setSessionInfo(session);
         setSuccess(true);
         toast.success('Attendance marked successfully!');
         reset();
       }
     } catch (err) {
-      window.alert('BRANCH 8 (catch): ' + (err instanceof Error ? err.message : String(err)));
       toast.error('Failed to process attendance. Please try again.');
     } finally {
       setLoading(false);
