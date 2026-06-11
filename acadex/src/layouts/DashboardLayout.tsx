@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/shared/Sidebar';
 import { TopBar } from '@/components/shared/TopBar';
@@ -7,9 +7,19 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function DashboardLayout() {
   const { profile } = useAuth();
-  const [isAdminView, setIsAdminView] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isAdminView, setIsAdminView] = useState(() => location.pathname.startsWith('/admin'));
 
-  const toggleView = () => setIsAdminView((prev) => !prev);
+  const toggleView = () => {
+    const switchingToAdmin = !isAdminView;
+    setIsAdminView(switchingToAdmin);
+    if (switchingToAdmin) {
+      navigate('/admin/dashboard');
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
