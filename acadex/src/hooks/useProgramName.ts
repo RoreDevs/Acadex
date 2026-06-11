@@ -1,24 +1,14 @@
 import { useState, useEffect } from 'react';
 import { programService } from '@/services/programService';
 
-const cache = new Map<string, string>();
-let fetched = false;
-
 export function useProgramName(programId: string | undefined): string {
-  const [name, setName] = useState(() => cache.get(programId || '') || programId || '');
+  const [name, setName] = useState(programId || '');
 
   useEffect(() => {
     if (!programId) return;
-    if (cache.has(programId)) {
-      setName(cache.get(programId)!);
-      return;
-    }
     programService.getPrograms().then((programs) => {
-      for (const p of programs) {
-        cache.set(p.id, p.name);
-      }
-      fetched = true;
-      setName(cache.get(programId) || programId);
+      const p = programs.find((p: any) => p.id === programId);
+      if (p) setName(p.name);
     });
   }, [programId]);
 
@@ -29,14 +19,11 @@ export function useProgramsMap() {
   const [map, setMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (fetched && Object.keys(map).length > 0) return;
     programService.getPrograms().then((programs) => {
       const m: Record<string, string> = {};
       for (const p of programs) {
         m[p.id] = p.name;
-        cache.set(p.id, p.name);
       }
-      fetched = true;
       setMap(m);
     });
   }, []);
