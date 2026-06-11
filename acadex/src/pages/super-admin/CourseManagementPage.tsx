@@ -62,21 +62,20 @@ export function CourseManagementPage() {
 
   const handleSave = async () => {
     if (!title || !code || !program_id || !level) { toast.error('Please fill all fields'); return; }
-    if (editing) {
-      const { error } = await courseService.updateCourse(editing.id, { title, code, program_id, level, credits: parseInt(credits) });
-      if (error) toast.error(error.message);
-      else {
-        toast.success('Course updated');
-        if (profile) await auditService.logAction(profile.id, profile.full_name, 'Update Course', `Updated ${editing.title}`);
+    const courseData = { title, code, program_id, level, credits: parseInt(credits) };
+    const { error } = editing
+      ? await courseService.updateCourse(editing.id, courseData)
+      : await courseService.createCourse(courseData);
+    if (error) {
+      if (error.message?.includes('duplicate key') || error.code === '23505') {
+        toast.error(`Course code "${code}" already exists. Please use a different code.`);
+      } else {
+        toast.error(error.message);
       }
-    } else {
-      const { error } = await courseService.createCourse({ title, code, program_id, level, credits: parseInt(credits) });
-      if (error) toast.error(error.message);
-      else {
-        toast.success('Course created');
-        if (profile) await auditService.logAction(profile.id, profile.full_name, 'Create Course', `Created ${title}`);
-      }
+      return;
     }
+    toast.success(editing ? 'Course updated' : 'Course created');
+    if (profile) await auditService.logAction(profile.id, profile.full_name, editing ? 'Update Course' : 'Create Course', `${editing ? 'Updated' : 'Created'} ${title}`);
     setDialogOpen(false);
     resetForm();
     loadData();
