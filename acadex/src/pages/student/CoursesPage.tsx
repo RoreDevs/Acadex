@@ -13,8 +13,8 @@ export function CoursesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!profile) return;
-    courseService.getEnrollments(profile.id)
+    if (!profile || !profile.program || !profile.level) return;
+    courseService.getCoursesByProgram(profile.program, profile.level)
       .then((data) => setCourses(data))
       .catch(() => toast.error('Failed to load courses'))
       .finally(() => setLoading(false));
@@ -40,42 +40,32 @@ export function CoursesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {courses.map((enrollment: any, i: number) => {
-            const course = enrollment.courses;
-            if (!course) return null;
-            return (
-              <motion.div
-                key={course.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <Card className="h-full hover:shadow-card-hover transition-all duration-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-primary-500" />
-                      </div>
-                      <Badge variant="outline">{course.level}</Badge>
+          {courses.map((course: any, i: number) => (
+            <motion.div
+              key={course.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <Card className="h-full hover:shadow-card-hover transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
+                      <BookOpen className="w-6 h-6 text-primary-500" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{course.title}</h3>
-                    <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <Code className="w-4 h-4" />
-                        {course.code}
-                      </div>
-                      {course.course_rep_id && (
-                        <div className="flex items-center gap-2">
-                          <UserCheck className="w-4 h-4" />
-                          Course Rep Assigned
-                        </div>
-                      )}
+                    <Badge variant="outline">{course.level}</Badge>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{course.title}</h3>
+                  <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <Code className="w-4 h-4" />
+                      {course.code}
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       )}
     </motion.div>
