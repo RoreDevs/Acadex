@@ -69,7 +69,16 @@ export function ProgramManagementPage() {
   };
 
   const handleDelete = async () => {
+    if (!editing) return;
+    const { error } = await programService.deleteProgram(editing.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success('Program deleted');
+      if (profile) await auditService.logAction(profile.id, profile.full_name, 'Delete Program', `Deleted ${editing.name}`);
+    }
     setDeleteOpen(false);
+    setEditing(null);
+    loadPrograms();
   };
 
   const columns = [
