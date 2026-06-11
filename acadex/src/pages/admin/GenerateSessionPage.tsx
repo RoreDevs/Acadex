@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { QrCode, Calendar, Clock, FileText } from 'lucide-react';
+import { QrCode, Calendar, Timer, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,8 +21,7 @@ const sessionSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters'),
   description: z.string().optional(),
   session_date: z.string().min(1, 'Please select a date'),
-  start_time: z.string().min(1, 'Please select start time'),
-  end_time: z.string().min(1, 'Please select end time'),
+  duration: z.string().min(1, 'Please select session duration'),
 });
 
 type SessionForm = z.infer<typeof sessionSchema>;
@@ -58,8 +57,19 @@ export function GenerateSessionPage() {
       return;
     }
 
+    const now = new Date();
+    const start_time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const durationMinutes = parseInt(data.duration);
+    const endDate = new Date(now.getTime() + durationMinutes * 60000);
+    const end_time = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}:${String(endDate.getSeconds()).padStart(2, '0')}`;
+
     const { error } = await sessionService.createSession({
-      ...data,
+      course_id: data.course_id,
+      title: data.title,
+      description: data.description,
+      session_date: data.session_date,
+      start_time,
+      end_time,
       program_id: profile.program!,
       level: profile.level!,
       course_code: course.code,
@@ -121,15 +131,23 @@ export function GenerateSessionPage() {
               <Input id="session_date" type="date" {...register('session_date')} error={errors.session_date?.message} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start_time">Start Time</Label>
-                <Input id="start_time" type="time" {...register('start_time')} error={errors.start_time?.message} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end_time">End Time</Label>
-                <Input id="end_time" type="time" {...register('end_time')} error={errors.end_time?.message} />
-              </div>
+            <div className="space-y-2">
+              <Label>Session Duration</Label>
+              <Select onValueChange={(v) => setValue('duration', v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 15, 20, 25, 30].map((m) => (
+                    <SelectItem key={m} value={String(m)}>
+                      {m} minutes
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.duration && (
+                <p className="mt-1.5 text-xs text-red-500">{errors.duration.message}</p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
@@ -156,8 +174,8 @@ export function GenerateSessionPage() {
               <FileText className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div className="text-sm text-primary-800 dark:text-primary-200">
-              <p className="font-medium mb-1">Automatic Code Generation</p>
-              <p>A unique attendance code will be generated automatically for this session. Students will use this code to mark their attendance.</p>
+              <p className="font-medium mb-1">Auto-Expiring Session</p>
+              <p>The session will start immediately and automatically expire after the chosen duration. Students can only mark attendance while the session is active.</p>
             </div>
           </div>
         </CardContent>

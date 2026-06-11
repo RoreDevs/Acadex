@@ -96,6 +96,18 @@ export const sessionService = {
       .eq('attendance_code', code)
       .maybeSingle();
     if (error) throw error;
+    if (!data) return null;
+
+    if (data.is_active) {
+      const [y, m, d] = data.session_date.split('-').map(Number);
+      const [hh, mm, ss = '0'] = data.end_time.split(':');
+      const sessionEnd = new Date(y, m - 1, d, +hh, +mm, +ss);
+      if (new Date() > sessionEnd) {
+        await supabase.from('sessions').update({ is_active: false }).eq('id', data.id);
+        data.is_active = false;
+      }
+    }
+
     return data as any;
   },
 
