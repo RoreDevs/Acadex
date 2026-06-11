@@ -45,6 +45,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
 
   const adminNavItems: NavItem[] = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/admin/dashboard' },
+    { label: 'Students', icon: <Users className="w-5 h-5" />, href: '/admin/students' },
     { label: 'Sessions', icon: <Calendar className="w-5 h-5" />, href: '/admin/sessions' },
     { label: 'Generate Session', icon: <QrCode className="w-5 h-5" />, href: '/admin/generate-session' },
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/admin/attendance' },

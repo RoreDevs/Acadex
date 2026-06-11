@@ -23,6 +23,7 @@ import { SessionManagementPage } from '@/pages/admin/SessionManagementPage';
 import { AttendanceTrackingPage } from '@/pages/admin/AttendanceTrackingPage';
 import { AdminCoursesPage } from '@/pages/admin/CoursesPage';
 import { AdminAnalyticsPage } from '@/pages/admin/AnalyticsPage';
+import { AdminStudentsPage } from '@/pages/admin/StudentsPage';
 
 // Super Admin Pages
 import { SuperAdminDashboardPage } from '@/pages/super-admin/DashboardPage';
@@ -82,6 +83,7 @@ export const router = createBrowserRouter([
       { path: 'admin/attendance', element: <RouteGuard roles={['admin', 'super_admin']}><AttendanceTrackingPage /></RouteGuard> },
       { path: 'admin/courses', element: <RouteGuard roles={['admin', 'super_admin']}><AdminCoursesPage /></RouteGuard> },
       { path: 'admin/analytics', element: <RouteGuard roles={['admin', 'super_admin']}><AdminAnalyticsPage /></RouteGuard> },
+      { path: 'admin/students', element: <RouteGuard roles={['admin', 'super_admin']}><AdminStudentsPage /></RouteGuard> },
     ],
   },
   {
