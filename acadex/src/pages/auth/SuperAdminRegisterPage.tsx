@@ -33,8 +33,6 @@ export function SuperAdminRegisterPage() {
     });
   }, [navigate]);
 
-  if (checking) return null;
-
   const {
     register,
     handleSubmit,
@@ -53,6 +51,8 @@ export function SuperAdminRegisterPage() {
       toast.success('Account created successfully!');
     }
   };
+
+  if (checking) return null;
 
   return (
     <div className="w-full max-w-md">
