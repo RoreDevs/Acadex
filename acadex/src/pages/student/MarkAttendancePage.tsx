@@ -51,15 +51,15 @@ export function MarkAttendancePage() {
       }
 
       if (!session.is_active) {
-        toast.error('This session has ended.');
+        toast.error('Session is no longer active.');
         setLoading(false);
         return;
       }
 
-      const sessionDate = new Date(session.session_date);
       const now = new Date();
-      if (sessionDate < now) {
-        toast.error('This session has expired.');
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      if (session.session_date < today) {
+        toast.error('Session date has passed.');
         setLoading(false);
         return;
       }

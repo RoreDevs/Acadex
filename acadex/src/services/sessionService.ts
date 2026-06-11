@@ -90,11 +90,12 @@ export const sessionService = {
   },
 
   async getSessionByCode(code: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('sessions')
       .select('*, courses(title, code)')
       .eq('attendance_code', code)
-      .single();
+      .maybeSingle();
+    if (error) throw error;
     return data as any;
   },
 
