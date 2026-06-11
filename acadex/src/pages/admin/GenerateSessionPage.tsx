@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +21,8 @@ const sessionSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters'),
   description: z.string().optional(),
   session_date: z.string().min(1, 'Please select a date'),
-  duration: z.string().min(1, 'Please select session duration'),
+  start_time: z.string().min(1, 'Please select start time'),
+  end_time: z.string().min(1, 'Please select end time'),
 });
 
 type SessionForm = z.infer<typeof sessionSchema>;
@@ -31,6 +32,7 @@ export function GenerateSessionPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [duration, setDuration] = useState('');
 
   useEffect(() => {
     if (!profile) return;
@@ -41,10 +43,27 @@ export function GenerateSessionPage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<SessionForm>({
     resolver: zodResolver(sessionSchema),
   });
+
+  const startTime = watch('start_time');
+
+  const handleDurationSelect = useCallback((minutes: string) => {
+    setDuration(minutes);
+    if (!startTime) {
+      toast.error('Please set the start time first.');
+      return;
+    }
+    const [hh, mm] = startTime.split(':').map(Number);
+    const start = new Date();
+    start.setHours(hh, mm, 0, 0);
+    const end = new Date(start.getTime() + parseInt(minutes) * 60000);
+    const endStr = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+    setValue('end_time', endStr);
+  }, [startTime, setValue]);
 
   const onSubmit = async (data: SessionForm) => {
     if (!profile) return;
@@ -57,19 +76,13 @@ export function GenerateSessionPage() {
       return;
     }
 
-    const now = new Date();
-    const start_time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-    const durationMinutes = parseInt(data.duration);
-    const endDate = new Date(now.getTime() + durationMinutes * 60000);
-    const end_time = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}:${String(endDate.getSeconds()).padStart(2, '0')}`;
-
     const { error } = await sessionService.createSession({
       course_id: data.course_id,
       title: data.title,
       description: data.description,
       session_date: data.session_date,
-      start_time,
-      end_time,
+      start_time: data.start_time,
+      end_time: data.end_time,
       program_id: profile.program!,
       level: profile.level!,
       course_code: course.code,
@@ -131,11 +144,22 @@ export function GenerateSessionPage() {
               <Input id="session_date" type="date" {...register('session_date')} error={errors.session_date?.message} />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_time">Start Time</Label>
+                <Input id="start_time" type="time" {...register('start_time')} error={errors.start_time?.message} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_time">End Time</Label>
+                <Input id="end_time" type="time" {...register('end_time')} error={errors.end_time?.message} />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Session Duration</Label>
-              <Select onValueChange={(v) => setValue('duration', v)}>
+              <Label>Quick Duration (auto-fills end time)</Label>
+              <Select onValueChange={handleDurationSelect} value={duration}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select duration" />
+                  <SelectValue placeholder="Select duration..." />
                 </SelectTrigger>
                 <SelectContent>
                   {[10, 15, 20, 25, 30].map((m) => (
@@ -145,9 +169,6 @@ export function GenerateSessionPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.duration && (
-                <p className="mt-1.5 text-xs text-red-500">{errors.duration.message}</p>
-              )}
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
@@ -175,7 +196,7 @@ export function GenerateSessionPage() {
             </div>
             <div className="text-sm text-primary-800 dark:text-primary-200">
               <p className="font-medium mb-1">Auto-Expiring Session</p>
-              <p>The session will start immediately and automatically expire after the chosen duration. Students can only mark attendance while the session is active.</p>
+              <p>Set the start and end time manually, or use the quick duration dropdown to auto-fill the end time. Sessions automatically expire at end time, or you can end them manually from the sessions page.</p>
             </div>
           </div>
         </CardContent>
