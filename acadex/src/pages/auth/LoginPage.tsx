@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { profileService } from '@/services/profileService';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
@@ -22,6 +23,13 @@ export function LoginPage() {
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSuperAdminLink, setShowSuperAdminLink] = useState(false);
+
+  useEffect(() => {
+    profileService.superAdminExists().then((exists) => {
+      if (!exists) setShowSuperAdminLink(true);
+    });
+  }, []);
 
   const {
     register,
@@ -133,15 +141,17 @@ export function LoginPage() {
               Create Account
             </Link>
           </p>
-          <p className="text-gray-500 dark:text-gray-400">
-            Super admin?{' '}
-            <Link
-              to="/super-admin/register"
-              className="text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors"
-            >
-              Register here
-            </Link>
-          </p>
+          {showSuperAdminLink && (
+            <p className="text-gray-500 dark:text-gray-400">
+              Super admin?{' '}
+              <Link
+                to="/super-admin/register"
+                className="text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors"
+              >
+                Register here
+              </Link>
+            </p>
+          )}
         </div>
       </motion.div>
     </div>

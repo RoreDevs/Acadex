@@ -74,6 +74,14 @@ export const profileService = {
     return { error };
   },
 
+  async superAdminExists(): Promise<boolean> {
+    const { count } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'super_admin');
+    return (count ?? 0) > 0;
+  },
+
   async searchProfiles(query: string) {
     const { data } = await supabase
       .from('profiles')

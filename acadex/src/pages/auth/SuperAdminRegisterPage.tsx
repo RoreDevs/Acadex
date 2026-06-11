@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { profileService } from '@/services/profileService';
 import toast from 'react-hot-toast';
 
 const registerSchema = z.object({
@@ -21,7 +22,18 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export function SuperAdminRegisterPage() {
   const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    profileService.superAdminExists().then((exists) => {
+      if (exists) navigate('/login', { replace: true });
+      else setChecking(false);
+    });
+  }, [navigate]);
+
+  if (checking) return null;
 
   const {
     register,
