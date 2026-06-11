@@ -20,20 +20,36 @@ export function RouteGuard({ children, roles }: RouteGuardProps) {
   }
 
   if (roles && profile && !roles.includes(profile.role)) {
+    if (profile.role === 'super_admin') {
+      return <Navigate to="/super-admin" replace />;
+    }
+    if (profile.role === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (profile?.role === 'super_admin' && !window.location.pathname.startsWith('/super-admin')) {
+    return <Navigate to="/super-admin" replace />;
   }
 
   return <>{children}</>;
 }
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   if (user) {
+    if (profile?.role === 'super_admin') {
+      return <Navigate to="/super-admin" replace />;
+    }
+    if (profile?.role === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
