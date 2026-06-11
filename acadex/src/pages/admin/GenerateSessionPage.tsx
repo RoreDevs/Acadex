@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { QrCode, Calendar, Timer, FileText } from 'lucide-react';
+import { QrCode, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +32,6 @@ export function GenerateSessionPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [duration, setDuration] = useState('');
 
   useEffect(() => {
     if (!profile) return;
@@ -43,27 +42,10 @@ export function GenerateSessionPage() {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<SessionForm>({
     resolver: zodResolver(sessionSchema),
   });
-
-  const startTime = watch('start_time');
-
-  const handleDurationSelect = useCallback((minutes: string) => {
-    setDuration(minutes);
-    if (!startTime) {
-      toast.error('Please set the start time first.');
-      return;
-    }
-    const [hh, mm] = startTime.split(':').map(Number);
-    const start = new Date();
-    start.setHours(hh, mm, 0, 0);
-    const end = new Date(start.getTime() + parseInt(minutes) * 60000);
-    const endStr = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
-    setValue('end_time', endStr);
-  }, [startTime, setValue]);
 
   const onSubmit = async (data: SessionForm) => {
     if (!profile) return;
@@ -155,22 +137,6 @@ export function GenerateSessionPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Quick Duration (auto-fills end time)</Label>
-              <Select onValueChange={handleDurationSelect} value={duration}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select duration..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 15, 20, 25, 30].map((m) => (
-                    <SelectItem key={m} value={String(m)}>
-                      {m} minutes
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -196,7 +162,7 @@ export function GenerateSessionPage() {
             </div>
             <div className="text-sm text-primary-800 dark:text-primary-200">
               <p className="font-medium mb-1">Auto-Expiring Session</p>
-              <p>Set the start and end time manually, or use the quick duration dropdown to auto-fill the end time. Sessions automatically expire at end time, or you can end them manually from the sessions page.</p>
+              <p>Sessions automatically expire at the set end time. You can also end them manually from the sessions page at any time.</p>
             </div>
           </div>
         </CardContent>
