@@ -35,7 +35,7 @@ export function GenerateSessionPage() {
 
   useEffect(() => {
     if (!profile) return;
-    courseService.getCoursesByProgram(profile.program, profile.level).then(setCourses);
+    courseService.getCoursesByProgram(profile.program!, profile.level!).then(setCourses);
   }, [profile]);
 
   const {
@@ -60,8 +60,8 @@ export function GenerateSessionPage() {
 
     const { error } = await sessionService.createSession({
       ...data,
-      program_id: profile.program,
-      level: profile.level,
+      program_id: profile.program!,
+      level: profile.level!,
       course_code: course.code,
     });
 

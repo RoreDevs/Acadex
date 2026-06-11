@@ -24,7 +24,7 @@ export function AdminDashboardPage() {
     const fetchData = async () => {
       try {
         const [s, trends] = await Promise.all([
-          dashboardService.getAdminStats(profile.program, profile.level),
+          dashboardService.getAdminStats(profile.program!, profile.level!),
           dashboardService.getAttendanceTrends(14),
         ]);
         setStats(s);

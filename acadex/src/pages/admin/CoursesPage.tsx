@@ -14,7 +14,7 @@ export function AdminCoursesPage() {
 
   useEffect(() => {
     if (!profile) return;
-    courseService.getCoursesByProgram(profile.program, profile.level)
+    courseService.getCoursesByProgram(profile.program!, profile.level!)
       .then(setCourses)
       .catch(() => toast.error('Failed to load courses'))
       .finally(() => setLoading(false));

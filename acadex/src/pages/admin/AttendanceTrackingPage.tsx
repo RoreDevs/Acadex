@@ -22,8 +22,8 @@ export function AttendanceTrackingPage() {
 
   useEffect(() => {
     if (!profile) return;
-    sessionService.getSessionsByProgram(profile.program, profile.level).then(setSessions);
-    profileService.getStudentsByProgram(profile.program, profile.level).then(setStudents);
+    sessionService.getSessionsByProgram(profile.program!, profile.level!).then(setSessions);
+    profileService.getStudentsByProgram(profile.program!, profile.level!).then(setStudents);
   }, [profile]);
 
   const loadAttendance = async (sessionId: string) => {

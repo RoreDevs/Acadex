@@ -6,6 +6,7 @@ import { RouteGuard, PublicRoute } from '@/components/shared/RouteGuard';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
+import { SuperAdminRegisterPage } from '@/pages/auth/SuperAdminRegisterPage';
 
 // Student Pages
 import { StudentDashboardPage } from '@/pages/student/DashboardPage';
@@ -54,6 +55,10 @@ export const router = createBrowserRouter([
       {
         path: 'forgot-password',
         element: <PublicRoute><ForgotPasswordPage /></PublicRoute>,
+      },
+      {
+        path: 'super-admin/register',
+        element: <PublicRoute><SuperAdminRegisterPage /></PublicRoute>,
       },
     ],
   },

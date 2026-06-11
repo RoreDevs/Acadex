@@ -13,9 +13,9 @@ interface AuthContextType {
     email: string;
     password: string;
     full_name: string;
-    index_number: string;
-    program: string;
-    level: string;
+    index_number?: string;
+    program?: string;
+    level?: string;
   }) => Promise<{ error: string | null; data?: UserProfile }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -88,9 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string;
     password: string;
     full_name: string;
-    index_number: string;
-    program: string;
-    level: string;
+    index_number?: string;
+    program?: string;
+    level?: string;
   }) => {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
@@ -107,9 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: authData.user.id,
             email: data.email,
             full_name: data.full_name,
-            index_number: data.index_number,
-            program: data.program,
-            level: data.level,
+            index_number: data.index_number ?? null,
+            program: data.program ?? null,
+            level: data.level ?? null,
             role: data.email === SUPER_ADMIN_EMAIL ? 'super_admin' : 'student',
           },
         ])

@@ -133,6 +133,15 @@ export function LoginPage() {
               Create Account
             </Link>
           </p>
+          <p className="text-gray-500 dark:text-gray-400">
+            Super admin?{' '}
+            <Link
+              to="/super-admin/register"
+              className="text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors"
+            >
+              Register here
+            </Link>
+          </p>
         </div>
       </motion.div>
     </div>

@@ -4,9 +4,9 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
-  index_number: string;
-  program: string;
-  level: string;
+  index_number?: string;
+  program?: string;
+  level?: string;
   role: Role;
   avatar_url?: string;
   created_at: string;
