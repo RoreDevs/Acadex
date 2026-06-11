@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { programService } from '@/services/programService';
+import { useProgramName } from '@/hooks/useProgramName';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import toast from 'react-hot-toast';
 
@@ -25,18 +25,9 @@ type ProfileForm = z.infer<typeof profileSchema>;
 
 export function ProfilePage() {
   const { profile, updateProfile, deleteAccount } = useAuth();
+  const programName = useProgramName(profile?.program);
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [programName, setProgramName] = useState('');
-
-  useEffect(() => {
-    if (profile?.program) {
-      programService.getPrograms().then((programs) => {
-        const p = programs.find((p: any) => p.id === profile.program);
-        if (p) setProgramName(p.name);
-      });
-    }
-  }, [profile?.program]);
 
   const {
     register,

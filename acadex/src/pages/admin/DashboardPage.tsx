@@ -5,10 +5,12 @@ import { StatsCard } from '@/components/shared/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardService } from '@/services/dashboardService';
+import { useProgramName } from '@/hooks/useProgramName';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 export function AdminDashboardPage() {
   const { profile } = useAuth();
+  const programName = useProgramName(profile?.program);
   const [stats, setStats] = useState({
     total_students: 0,
     total_sessions: 0,
@@ -40,7 +42,7 @@ export function AdminDashboardPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">{profile?.program} - {profile?.level}</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">{programName} - {profile?.level}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

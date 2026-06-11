@@ -11,11 +11,13 @@ import { Label } from '@/components/ui/label';
 import { profileService } from '@/services/profileService';
 import { auditService } from '@/services/auditService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgramsMap } from '@/hooks/useProgramName';
 import { Badge } from '@/components/ui/badge';
 import toast from 'react-hot-toast';
 
 export function AdminManagementPage() {
   const { profile: currentUser } = useAuth();
+  const programsMap = useProgramsMap();
   const [admins, setAdmins] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export function AdminManagementPage() {
       <span className="font-medium">{item.full_name}</span>
     )},
     { key: 'email', header: 'Email' },
-    { key: 'program', header: 'Program' },
+    { key: 'program', header: 'Program', render: (item: any) => programsMap[item.program] || item.program },
     { key: 'role', header: 'Role', render: (item: any) => (
       <Badge className={item.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'}>
         {item.role.replace('_', ' ').toUpperCase()}

@@ -8,9 +8,11 @@ import { DataTable } from '@/components/shared/DataTable';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { profileService } from '@/services/profileService';
 import { exportToCSV, exportToExcel } from '@/utils/export';
+import { useProgramsMap } from '@/hooks/useProgramName';
 import toast from 'react-hot-toast';
 
 export function StudentManagementPage() {
+  const programsMap = useProgramsMap();
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -43,7 +45,7 @@ export function StudentManagementPage() {
     )},
     { key: 'index_number', header: 'Index Number' },
     { key: 'email', header: 'Email' },
-    { key: 'program', header: 'Program' },
+    { key: 'program', header: 'Program', render: (item: any) => programsMap[item.program] || item.program },
     { key: 'level', header: 'Level' },
     { key: 'actions', header: 'Actions', sortable: false, render: (item: any) => (
       <div className="flex gap-2">
@@ -79,7 +81,7 @@ export function StudentManagementPage() {
               Name: s.full_name,
               'Index Number': s.index_number,
               Email: s.email,
-              Program: s.program,
+              Program: programsMap[s.program] || s.program,
               Level: s.level,
             })), 'all-students');
             toast.success('CSV exported');
@@ -90,7 +92,7 @@ export function StudentManagementPage() {
               Name: s.full_name,
               'Index Number': s.index_number,
               Email: s.email,
-              Program: s.program,
+              Program: programsMap[s.program] || s.program,
               Level: s.level,
             })), 'all-students');
             toast.success('Excel exported');
