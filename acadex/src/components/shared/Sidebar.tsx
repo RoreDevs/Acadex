@@ -40,6 +40,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Mark Attendance', icon: <QrCode className="w-5 h-5" />, href: '/mark-attendance' },
     { label: 'Records', icon: <ClipboardList className="w-5 h-5" />, href: '/records' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/courses' },
+    { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/notifications' },
   ];
 
   const adminNavItems: NavItem[] = [

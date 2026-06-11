@@ -14,6 +14,7 @@ import { ProfilePage } from '@/pages/student/ProfilePage';
 import { MarkAttendancePage } from '@/pages/student/MarkAttendancePage';
 import { RecordsPage } from '@/pages/student/RecordsPage';
 import { CoursesPage } from '@/pages/student/CoursesPage';
+import { NotificationsPage as StudentNotificationsPage } from '@/pages/student/NotificationsPage';
 
 // Admin Pages
 import { AdminDashboardPage } from '@/pages/admin/DashboardPage';
@@ -32,7 +33,7 @@ import { CourseManagementPage } from '@/pages/super-admin/CourseManagementPage';
 import { SuperAdminSessionsPage } from '@/pages/super-admin/SessionsPage';
 import { PromotionsPage } from '@/pages/super-admin/PromotionsPage';
 import { AttendancePage } from '@/pages/super-admin/AttendancePage';
-import { NotificationsPage } from '@/pages/super-admin/NotificationsPage';
+import { NotificationsPage as SuperAdminNotificationsPage } from '@/pages/super-admin/NotificationsPage';
 import { AuditLogPage } from '@/pages/super-admin/AuditLogPage';
 
 export const router = createBrowserRouter([
@@ -72,6 +73,7 @@ export const router = createBrowserRouter([
       { path: 'mark-attendance', element: <MarkAttendancePage /> },
       { path: 'records', element: <RecordsPage /> },
       { path: 'courses', element: <CoursesPage /> },
+      { path: 'notifications', element: <StudentNotificationsPage /> },
 
       // Admin Routes
       { path: 'admin/dashboard', element: <RouteGuard roles={['admin', 'super_admin']}><AdminDashboardPage /></RouteGuard> },
@@ -94,7 +96,7 @@ export const router = createBrowserRouter([
       { path: 'sessions', element: <SuperAdminSessionsPage /> },
       { path: 'promotions', element: <PromotionsPage /> },
       { path: 'attendance', element: <AttendancePage /> },
-      { path: 'notifications', element: <NotificationsPage /> },
+      { path: 'notifications', element: <SuperAdminNotificationsPage /> },
       { path: 'audit', element: <AuditLogPage /> },
     ],
   },

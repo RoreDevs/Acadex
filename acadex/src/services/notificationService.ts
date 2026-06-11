@@ -12,6 +12,15 @@ export const notificationService = {
     return (data || []) as Notification[];
   },
 
+  async getUnreadCount(userId: string) {
+    const { count } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('read', false);
+    return count ?? 0;
+  },
+
   async getAllNotifications() {
     const { data } = await supabase
       .from('notifications')
@@ -31,6 +40,26 @@ export const notificationService = {
       { ...data, type: data.type || 'info' },
     ]);
     return { error };
+  },
+
+  async sendToAllStudents(data: {
+    title: string;
+    message: string;
+    type?: 'info' | 'success' | 'warning' | 'error';
+  }) {
+    const { data: students } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'student');
+    if (!students || students.length === 0) return { error: null };
+    const notifications = students.map((s) => ({
+      user_id: s.id,
+      title: data.title,
+      message: data.message,
+      type: data.type || 'info',
+    }));
+    const { error } = await supabase.from('notifications').insert(notifications);
+    return { error, count: notifications.length };
   },
 
   async markAsRead(id: string) {

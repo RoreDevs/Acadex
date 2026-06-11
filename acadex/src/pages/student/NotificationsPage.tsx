@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, Trash2, CheckCheck, User, Clock, Info, CheckCircle, AlertTriangle, XCircle, Send } from 'lucide-react';
+import { Bell, CheckCheck, User, Clock, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { notificationService } from '@/services/notificationService';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { notificationService } from '@/services/notificationService';
 import toast from 'react-hot-toast';
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -29,25 +23,19 @@ const typeVariants: Record<string, 'default' | 'success' | 'warning' | 'danger'>
 };
 
 export function NotificationsPage() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<any>(null);
-  const [sendOpen, setSendOpen] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [type, setType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
 
   const loadNotifications = () => {
-    notificationService.getAllNotifications()
+    if (!user) return;
+    notificationService.getNotifications(user.id)
       .then(setNotifications)
       .catch(() => toast.error('Failed to load notifications'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadNotifications(); }, []);
+  useEffect(() => { loadNotifications(); }, [user]);
 
   const handleMarkRead = async (id: string) => {
     const { error } = await notificationService.markAsRead(id);
@@ -59,39 +47,15 @@ export function NotificationsPage() {
     }
   };
 
-  const handleSend = async () => {
-    if (!title || !message) { toast.error('Please fill all fields'); return; }
-    setSending(true);
-    const { error, count } = await notificationService.sendToAllStudents({ title, message, type });
-    setSending(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Notification sent to ${count} students`);
-    setSendOpen(false);
-    setTitle('');
-    setMessage('');
-    setType('info');
-  };
-
   const handleMarkAllRead = async () => {
+    if (!user) return;
     const unread = notifications.filter((n) => !n.read);
     if (unread.length === 0) { toast.success('All already read'); return; }
-    const { error } = await notificationService.markAllAsRead();
+    const { error } = await notificationService.markAllAsRead(user.id);
     if (error) toast.error(error.message);
     else {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       toast.success('All marked as read');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedNotification) return;
-    const { error } = await notificationService.deleteNotification(selectedNotification.id);
-    if (error) toast.error(error.message);
-    else {
-      setNotifications((prev) => prev.filter((n) => n.id !== selectedNotification.id));
-      toast.success('Notification deleted');
-      setDeleteOpen(false);
-      setSelectedNotification(null);
     }
   };
 
@@ -102,52 +66,10 @@ export function NotificationsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">{notifications.filter((n) => !n.read).length} unread</p>
         </div>
-        <div className="flex gap-2">
-          <Dialog open={sendOpen} onOpenChange={setSendOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Send className="w-4 h-4 mr-2" />
-                Send Notification
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Send Notification to All Students</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Notification title" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Message</Label>
-                  <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Write your message..." rows={4} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select value={type} onValueChange={(v: any) => setType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="info">Info</SelectItem>
-                      <SelectItem value="success">Success</SelectItem>
-                      <SelectItem value="warning">Warning</SelectItem>
-                      <SelectItem value="error">Error</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button className="w-full" onClick={handleSend} disabled={sending}>
-                  {sending ? 'Sending...' : 'Send to All Students'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
-            <CheckCheck className="w-4 h-4 mr-2" />
-            Mark All Read
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
+          <CheckCheck className="w-4 h-4 mr-2" />
+          Mark All Read
+        </Button>
       </div>
 
       {loading ? (
@@ -198,23 +120,9 @@ export function NotificationsPage() {
                           <CheckCheck className="w-4 h-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => {
-                          setSelectedNotification(n);
-                          setDeleteOpen(true);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 mt-3 text-xs text-gray-400 dark:text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {n.profiles?.full_name || 'System'}
-                    </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(n.created_at).toLocaleString()}
@@ -226,15 +134,6 @@ export function NotificationsPage() {
           ))}
         </div>
       )}
-
-      <ConfirmModal
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Delete Notification"
-        description="Are you sure you want to delete this notification?"
-        onConfirm={handleDelete}
-        confirmText="Delete"
-      />
     </motion.div>
   );
 }
