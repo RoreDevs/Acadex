@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +28,8 @@ type RegisterForm = z.infer<typeof registerSchema>;
 const LEVELS = ['Level 100', 'Level 200', 'Level 300', 'Level 400'];
 
 export function RegisterPage() {
-  const { signUp } = useAuth();
+  const { signUp, profile } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
 
@@ -51,6 +52,9 @@ export function RegisterPage() {
     setLoading(false);
     if (error) {
       toast.error(error);
+    } else if (profile) {
+      toast.success('Account created successfully!');
+      navigate(profile.role === 'super_admin' ? '/super-admin' : '/dashboard');
     } else {
       toast.success('Account created successfully! Please check your email to confirm.');
     }

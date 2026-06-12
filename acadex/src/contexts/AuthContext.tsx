@@ -122,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (profileError) return { error: profileError.message };
+      setUser(authData.user);
+      setProfile(profileData as UserProfile);
       return { error: null, data: profileData as UserProfile };
     }
 
