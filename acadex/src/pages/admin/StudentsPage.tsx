@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService } from '@/services/profileService';
 import { useProgramName } from '@/hooks/useProgramName';
+import { exportToCSV, exportToExcel, exportToPDF } from '@/utils/export';
 import toast from 'react-hot-toast';
 
 export function AdminStudentsPage() {
@@ -35,9 +37,47 @@ export function AdminStudentsPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Students</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">{programName} - {profile?.level} &bull; {students.length} students</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Students</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{programName} - {profile?.level} &bull; {students.length} students</p>
+        </div>
+        {students.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              exportToCSV(students.map((s) => ({
+                Name: s.full_name,
+                'Index Number': s.index_number,
+                Email: s.email,
+                Level: s.level,
+              })), `${programName.replace(/\s+/g, '-').toLowerCase()}-students`);
+              toast.success('CSV exported');
+            }}>CSV</Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              exportToExcel(students.map((s) => ({
+                Name: s.full_name,
+                'Index Number': s.index_number,
+                Email: s.email,
+                Level: s.level,
+              })), `${programName.replace(/\s+/g, '-').toLowerCase()}-students`);
+              toast.success('Excel exported');
+            }}>Excel</Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              exportToPDF(
+                students.map((s) => ({
+                  'Full Name': s.full_name,
+                  'Index Number': s.index_number,
+                  Email: s.email,
+                  Level: s.level,
+                })),
+                `${programName.replace(/\s+/g, '-').toLowerCase()}-students`,
+                `${programName} - Level ${profile?.level} Students`,
+                ['Full Name', 'Index Number', 'Email', 'Level']
+              );
+              toast.success('PDF exported');
+            }}>PDF</Button>
+          </div>
+        )}
       </div>
 
       <Card>
