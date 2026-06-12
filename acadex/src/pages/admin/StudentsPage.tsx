@@ -48,8 +48,6 @@ export function AdminStudentsPage() {
               exportToCSV(students.map((s) => ({
                 Name: s.full_name,
                 'Index Number': s.index_number,
-                Email: s.email,
-                Level: s.level,
               })), `${programName.replace(/\s+/g, '-').toLowerCase()}-students`);
               toast.success('CSV exported');
             }}>CSV</Button>
@@ -57,8 +55,6 @@ export function AdminStudentsPage() {
               exportToExcel(students.map((s) => ({
                 Name: s.full_name,
                 'Index Number': s.index_number,
-                Email: s.email,
-                Level: s.level,
               })), `${programName.replace(/\s+/g, '-').toLowerCase()}-students`);
               toast.success('Excel exported');
             }}>Excel</Button>
@@ -67,12 +63,10 @@ export function AdminStudentsPage() {
                 students.map((s) => ({
                   'Full Name': s.full_name,
                   'Index Number': s.index_number,
-                  Email: s.email,
-                  Level: s.level,
                 })),
                 `${programName.replace(/\s+/g, '-').toLowerCase()}-students`,
                 `${programName} - Level ${profile?.level} Students`,
-                ['Full Name', 'Index Number', 'Email', 'Level']
+                ['Full Name', 'Index Number']
               );
               toast.success('PDF exported');
             }}>PDF</Button>
