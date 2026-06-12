@@ -42,18 +42,17 @@ export const notificationService = {
     return { error };
   },
 
-  async sendToAllStudents(data: {
+  async sendToAllUsers(data: {
     title: string;
     message: string;
     type?: 'info' | 'success' | 'warning' | 'error';
   }) {
-    const { data: students } = await supabase
+    const { data: users } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('role', 'student');
-    if (!students || students.length === 0) return { error: null };
-    const notifications = students.map((s) => ({
-      user_id: s.id,
+      .select('id');
+    if (!users || users.length === 0) return { error: null };
+    const notifications = users.map((u) => ({
+      user_id: u.id,
       title: data.title,
       message: data.message,
       type: data.type || 'info',

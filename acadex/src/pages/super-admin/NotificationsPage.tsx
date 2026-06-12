@@ -62,10 +62,10 @@ export function NotificationsPage() {
   const handleSend = async () => {
     if (!title || !message) { toast.error('Please fill all fields'); return; }
     setSending(true);
-    const { error, count } = await notificationService.sendToAllStudents({ title, message, type });
+    const { error, count } = await notificationService.sendToAllUsers({ title, message, type });
     setSending(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(`Notification sent to ${count} students`);
+    toast.success(`Notification sent to ${count} users`);
     setSendOpen(false);
     setTitle('');
     setMessage('');
@@ -112,7 +112,7 @@ export function NotificationsPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Send Notification to All Students</DialogTitle>
+                <DialogTitle>Send Notification to All Users</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -138,7 +138,7 @@ export function NotificationsPage() {
                   </Select>
                 </div>
                 <Button className="w-full" onClick={handleSend} disabled={sending}>
-                  {sending ? 'Sending...' : 'Send to All Students'}
+                  {sending ? 'Sending...' : 'Send to All Users'}
                 </Button>
               </div>
             </DialogContent>
