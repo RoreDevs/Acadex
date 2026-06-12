@@ -51,6 +51,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/admin/attendance' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/admin/courses' },
     { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/admin/analytics' },
+    { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/notifications' },
   ];
 
   const superAdminNavItems: NavItem[] = [

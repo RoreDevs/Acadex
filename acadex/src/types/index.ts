@@ -59,10 +59,13 @@ export interface Attendance {
 export interface Notification {
   id: string;
   user_id: string;
+  sender_id?: string;
+  broadcast_id?: string;
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   read: boolean;
+  deleted?: boolean;
   created_at: string;
 }
 
