@@ -23,12 +23,13 @@ export function StudentDashboardPage() {
     if (!profile) return;
     const fetchData = async () => {
       try {
-        const [s, att, sessions] = await Promise.all([
+        const [s, att, sessions, courses] = await Promise.all([
           attendanceService.getStudentStats(profile.id),
           attendanceService.getAttendanceByStudent(profile.id),
           sessionService.getSessions(),
+          courseService.getCoursesByProgram(profile.program!, profile.level!),
         ]);
-        setStats(s);
+        setStats({ ...s, total_courses: courses.length });
         setRecentAttendance(att.slice(0, 5));
 
         const now = new Date();
