@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardService } from '@/services/dashboardService';
 import { attendanceService } from '@/services/attendanceService';
+import { profileService } from '@/services/profileService';
+import { sessionService } from '@/services/sessionService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RePieChart, Pie, Cell, Legend } from 'recharts';
 
 const COLORS = ['#1e3a5f', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -16,16 +18,42 @@ export function AdminAnalyticsPage() {
   const [monthlyData, setMonthlyData] = useState<{ name: string; present: number; absent: number }[]>([]);
 
   useEffect(() => {
+    if (!profile?.program || !profile?.level) return;
     dashboardService.getAttendanceTrends(30).then(setTrends);
     dashboardService.getProgramAttendanceComparison().then(setProgramData);
     const now = new Date();
-    attendanceService.getMonthlyAttendance(now.getFullYear(), now.getMonth() + 1).then((data) => {
-      const total = data.length;
-      setMonthlyData([
-        { name: 'This Month', present: total, absent: Math.round(total * 0.15) },
-      ]);
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    Promise.all([
+      profileService.getStudentsByProgram(profile.program, profile.level),
+      sessionService.getSessionsByProgram(profile.program, profile.level),
+    ]).then(([students, sessions]) => {
+      const monthSessions = (sessions || []).filter((s: any) => {
+        const d = new Date(s.session_date);
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+      });
+      const sessionIds = monthSessions.map((s: any) => s.id);
+      if (sessionIds.length === 0) {
+        setMonthlyData([{ name: 'This Month', present: 0, absent: 0 }]);
+        return;
+      }
+      attendanceService.getAttendanceByDateRange(
+        `${year}-${String(month).padStart(2, '0')}-01`,
+        new Date(year, month, 0).toISOString().split('T')[0]
+      ).then((records) => {
+        const totalPresent = (records || []).filter((r: any) =>
+          sessionIds.includes(r.session_id)
+        ).length;
+        const totalStudents = students?.length || 0;
+        const totalPossible = totalStudents * sessionIds.length;
+        setMonthlyData([{
+          name: 'This Month',
+          present: totalPresent,
+          absent: Math.max(0, totalPossible - totalPresent),
+        }]);
+      });
     });
-  }, []);
+  }, [profile?.program, profile?.level]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
