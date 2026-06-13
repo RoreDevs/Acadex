@@ -12,7 +12,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { courseService } from '@/services/courseService';
 import { slideService } from '@/services/slideService';
@@ -21,6 +20,7 @@ import toast from 'react-hot-toast';
 
 export function AdminSlidesPage() {
   const { profile } = useAuth();
+  const programId = profile?.program;
   const [courses, setCourses] = useState<any[]>([]);
   const [slidesByCourse, setSlidesByCourse] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
@@ -36,24 +36,17 @@ export function AdminSlidesPage() {
   const [deletingSlideId, setDeletingSlideId] = useState<string | null>(null);
 
   const loadData = async () => {
-    if (!profile) return;
+    if (!profile || !programId) return;
     setLoading(true);
     try {
-      const { data: programData } = await supabase
-        .from('programs')
-        .select('id')
-        .eq('name', profile.program!)
-        .single();
-      if (programData) {
-        const coursesData = await courseService.getCoursesByProgram(programData.id, profile.level!);
-        setCourses(coursesData);
-        const slidesMap: Record<string, any[]> = {};
-        for (const course of coursesData) {
-          const slides = await slideService.getSlidesByCourse(course.id);
-          slidesMap[course.id] = slides;
-        }
-        setSlidesByCourse(slidesMap);
+      const coursesData = await courseService.getCoursesByProgram(programId, profile.level!);
+      setCourses(coursesData);
+      const slidesMap: Record<string, any[]> = {};
+      for (const course of coursesData) {
+        const slides = await slideService.getSlidesByCourse(course.id);
+        slidesMap[course.id] = slides;
       }
+      setSlidesByCourse(slidesMap);
     } catch {
       toast.error('Failed to load data');
     }
@@ -68,25 +61,15 @@ export function AdminSlidesPage() {
   useEffect(() => { loadData(); }, [profile]);
 
   const handleUpload = async () => {
-    if (!selectedCourseId || !slideTitle || !slideFile || !profile) {
+    if (!selectedCourseId || !slideTitle || !slideFile || !profile || !programId) {
       toast.error('Please fill all fields');
       return;
     }
     setUploading(true);
-    const { data: programData } = await supabase
-      .from('programs')
-      .select('id')
-      .eq('name', profile.program!)
-      .single();
-    if (!programData) {
-      toast.error('Program not found');
-      setUploading(false);
-      return;
-    }
     const { error } = await slideService.uploadSlide(slideFile, {
       title: slideTitle,
       course_id: selectedCourseId,
-      program_id: programData.id,
+      program_id: programId,
       uploaded_by: profile.id,
     });
     setUploading(false);
