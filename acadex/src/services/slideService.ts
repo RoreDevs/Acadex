@@ -47,12 +47,20 @@ export const slideService = {
   },
 
   async ensureBucket() {
-    const { data: buckets } = await supabase.storage.listBuckets();
-    if (!buckets?.find((b) => b.name === STORAGE_BUCKET)) {
-      await supabase.storage.createBucket(STORAGE_BUCKET, {
-        public: true,
-        fileSizeLimit: 52428800,
-      });
+    const { error: getError } = await supabase.storage.getBucket(STORAGE_BUCKET);
+    if (!getError) return;
+
+    const { error: createError } = await supabase.storage.createBucket(STORAGE_BUCKET, {
+      public: true,
+      fileSizeLimit: 52428800,
+    });
+    if (!createError) return;
+
+    const { error: rpcError } = await supabase.rpc('exec_sql', {
+      sql: `INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types) VALUES ('${STORAGE_BUCKET}', '${STORAGE_BUCKET}', TRUE, FALSE, 52428800, NULL) ON CONFLICT (id) DO NOTHING;`,
+    });
+    if (rpcError) {
+      console.error('Failed to ensure storage bucket:', rpcError.message);
     }
   },
 

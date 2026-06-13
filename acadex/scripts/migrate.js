@@ -115,7 +115,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;`;
 
   // Verify tables
   console.log('\nVerifying tables...');
-  const tables = ['profiles', 'programs', 'courses', 'enrollments', 'sessions', 'attendance', 'notifications', 'audit_logs'];
+  const tables = ['profiles', 'programs', 'courses', 'enrollments', 'sessions', 'attendance', 'notifications', 'audit_logs', 'slides'];
 
   for (const table of tables) {
     const { data, error } = await supabase
