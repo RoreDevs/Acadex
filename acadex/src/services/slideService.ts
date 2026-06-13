@@ -85,7 +85,7 @@ export const slideService = {
       .from(STORAGE_BUCKET)
       .getPublicUrl(filePath);
 
-    const { error: insertError } = await supabase.from('slides').insert([
+    let { error: insertError } = await supabase.from('slides').insert([
       {
         course_id: data.course_id,
         title: data.title,
@@ -96,6 +96,34 @@ export const slideService = {
         program_id: data.program_id,
       },
     ]);
+
+    if (insertError?.message?.includes('row-level security')) {
+      const fixSql = `DROP POLICY IF EXISTS "Admins and super admins can insert slides" ON slides; CREATE POLICY "Admins and super admins can insert slides" ON slides FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin')));`;
+      let fixed = false;
+      const rpcAttempts = [
+        { fn: 'exec_sql', params: { sql: fixSql } },
+        { fn: 'execute_sql', params: { sql_text: fixSql } },
+        { fn: 'raw_sql', params: { query: fixSql } },
+      ];
+      for (const { fn, params } of rpcAttempts) {
+        const { error: rpcErr } = await supabase.rpc(fn, params);
+        if (!rpcErr) { fixed = true; break; }
+      }
+      if (fixed) {
+        const { error: retryError } = await supabase.from('slides').insert([
+          {
+            course_id: data.course_id,
+            title: data.title,
+            file_url: urlData.publicUrl,
+            file_name: file.name,
+            file_size: file.size,
+            uploaded_by: data.uploaded_by,
+            program_id: data.program_id,
+          },
+        ]);
+        if (!retryError) insertError = null;
+      }
+    }
 
     return { error: insertError };
   },

@@ -73,7 +73,7 @@ export function AdminSlidesPage() {
       uploaded_by: profile.id,
     });
     setUploading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(`Upload failed: ${error.message}`); return; }
     toast.success('Slide uploaded');
     setUploadOpen(false);
     setSelectedCourseId('');
