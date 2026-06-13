@@ -19,6 +19,10 @@ export function RouteGuard({ children, roles }: RouteGuardProps) {
     return <Navigate to="/login" replace />;
   }
 
+  if (roles && !profile) {
+    return <LoadingScreen />;
+  }
+
   if (roles && profile && !roles.includes(profile.role)) {
     if (profile.role === 'super_admin') {
       return <Navigate to="/super-admin" replace />;
@@ -40,6 +44,10 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (user && !profile) {
     return <LoadingScreen />;
   }
 

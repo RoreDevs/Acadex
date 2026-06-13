@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,10 +20,19 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, user, profile } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuperAdminLink, setShowSuperAdminLink] = useState(false);
+
+  useEffect(() => {
+    if (user && profile) {
+      if (profile.role === 'super_admin') navigate('/super-admin', { replace: true });
+      else if (profile.role === 'admin') navigate('/admin/dashboard', { replace: true });
+      else navigate('/dashboard', { replace: true });
+    }
+  }, [user, profile, navigate]);
 
   useEffect(() => {
     profileService.superAdminExists().then((exists) => {
