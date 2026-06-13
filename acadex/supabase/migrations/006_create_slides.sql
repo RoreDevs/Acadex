@@ -41,3 +41,27 @@ CREATE POLICY "Admins can delete own slides"
     uploaded_by = auth.uid() OR
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'super_admin')
   );
+
+-- Create storage bucket for slides
+INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
+VALUES ('slides', 'slides', TRUE, FALSE, 52428800, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public access to slides bucket
+CREATE POLICY "Public can view slides"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'slides');
+
+CREATE POLICY "Admins and super admins can upload slides"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'slides' AND
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
+  );
+
+CREATE POLICY "Admins and super admins can delete slides from storage"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'slides' AND
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
+  );

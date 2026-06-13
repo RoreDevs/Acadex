@@ -46,12 +46,23 @@ export const slideService = {
     return (data || []) as any[];
   },
 
+  async ensureBucket() {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find((b) => b.name === STORAGE_BUCKET)) {
+      await supabase.storage.createBucket(STORAGE_BUCKET, {
+        public: true,
+        fileSizeLimit: 52428800,
+      });
+    }
+  },
+
   async uploadSlide(file: File, data: {
     title: string;
     course_id: string;
     program_id: string;
     uploaded_by: string;
   }) {
+    await this.ensureBucket();
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${data.program_id}/${data.course_id}/${fileName}`;
