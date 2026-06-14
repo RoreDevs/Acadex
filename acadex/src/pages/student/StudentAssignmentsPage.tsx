@@ -16,7 +16,10 @@ export function StudentAssignmentsPage() {
     if (!user) return;
     assignmentService.getAssignmentsForStudent(user.id)
       .then(setAssignments)
-      .catch(() => toast.error('Failed to load assignments'))
+      .catch((error) => {
+        console.error('Failed to load assignments:', error);
+        toast.error('Failed to load assignments');
+      })
       .finally(() => setLoading(false));
   }, [user]);
 

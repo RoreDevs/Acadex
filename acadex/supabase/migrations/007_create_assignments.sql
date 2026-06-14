@@ -20,9 +20,21 @@ CREATE INDEX IF NOT EXISTS idx_assignments_created_at ON assignments(created_at 
 -- RLS
 ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Everyone can view assignments"
+CREATE POLICY "Admins can view all assignments"
   ON assignments FOR SELECT
-  USING (TRUE);
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
+  );
+
+CREATE POLICY "Students can view assignments for their enrolled courses"
+  ON assignments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM enrollments 
+      WHERE enrollments.student_id = auth.uid() 
+      AND enrollments.course_id = assignments.course_id
+    )
+  );
 
 CREATE POLICY "Admins and super admins can insert assignments"
   ON assignments FOR INSERT
@@ -36,14 +48,14 @@ CREATE POLICY "Admins can update assignments in their program"
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'super_admin') OR
     (
       posted_by = auth.uid() AND
-      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND program = assignments.program_id)
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND program::uuid = assignments.program_id)
     )
   )
   WITH CHECK (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'super_admin') OR
     (
       posted_by = auth.uid() AND
-      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND program = assignments.program_id)
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND program::uuid = assignments.program_id)
     )
   );
 
@@ -53,6 +65,6 @@ CREATE POLICY "Admins can delete assignments in their program"
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'super_admin') OR
     (
       posted_by = auth.uid() AND
-      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND program = assignments.program_id)
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND program::uuid = assignments.program_id)
     )
   );

@@ -20,17 +20,33 @@ export const assignmentService = {
   },
 
   async getAssignmentsForStudent(studentId: string) {
-    const { data: enrollments } = await supabase
+    const { data: enrollments, error: enrollmentError } = await supabase
       .from('enrollments')
       .select('course_id')
       .eq('student_id', studentId);
-    if (!enrollments || enrollments.length === 0) return [];
+    
+    if (enrollmentError) {
+      console.error('Error fetching enrollments:', enrollmentError);
+      return [];
+    }
+    
+    if (!enrollments || enrollments.length === 0) {
+      console.log('No enrollments found for student:', studentId);
+      return [];
+    }
+    
     const courseIds = enrollments.map((e) => e.course_id);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('assignments')
       .select('*, courses(code, title), profiles(full_name)')
       .in('course_id', courseIds)
       .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching assignments:', error);
+      return [];
+    }
+    
     return (data || []) as any[];
   },
 
