@@ -99,4 +99,50 @@ export const attendanceService = {
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
     return attendanceService.getAttendanceByDateRange(startDate, endDate);
   },
-};
+
+  async getAttendanceReportByCourse(courseId: string) {
+    // Get all enrolled students for the course
+    const { data: enrollments } = await supabase
+      .from('enrollments')
+      .select('student_id, profiles(id, full_name, index_number)')
+      .eq('course_id', courseId);
+
+    // Get total sessions for the course
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('course_id', courseId);
+
+    const totalSessions = sessions?.length || 0;
+    const studentIds = enrollments?.map(e => e.student_id) || [];
+
+    // Get attendance records for these students in this course's sessions
+    const sessionIds = sessions?.map(s => s.id) || [];
+    
+    let attendanceQuery = supabase
+      .from('attendance')
+      .select('student_id');
+
+    if (sessionIds.length > 0) {
+      attendanceQuery = attendanceQuery.in('session_id', sessionIds);
+    }
+
+    const { data: attendanceRecords } = await attendanceQuery;
+
+    // Count attendance per student
+    const attendanceCount: Record<string, number> = {};
+    attendanceRecords?.forEach((record: any) => {
+      attendanceCount[record.student_id] = (attendanceCount[record.student_id] || 0) + 1;
+    });
+
+    // Build report
+    const report = enrollments?.map((enrollment: any) => ({
+      'Full Name': enrollment.profiles?.full_name || 'N/A',
+      'Index Number': enrollment.profiles?.index_number || 'N/A',
+      'Sessions Attended': attendanceCount[enrollment.student_id] || 0,
+      'Total Sessions': totalSessions,
+      'Attendance Summary': `${attendanceCount[enrollment.student_id] || 0}/${totalSessions}`,
+    })) || [];
+
+    return report;
+  },

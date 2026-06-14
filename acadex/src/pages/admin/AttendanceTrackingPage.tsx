@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Users, CheckCircle, XCircle } from 'lucide-react';
+import { Download, Users, CheckCircle, XCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { attendanceService } from '@/services/attendanceService';
 import { sessionService } from '@/services/sessionService';
 import { profileService } from '@/services/profileService';
-import { exportToCSV } from '@/utils/export';
+import { courseService } from '@/services/courseService';
+import { exportToCSV, exportToExcel, exportToPDF } from '@/utils/export';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -19,11 +20,15 @@ export function AttendanceTrackingPage() {
   const [attendance, setAttendance] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
     sessionService.getSessionsByProgram(profile.program!, profile.level!).then(setSessions);
     profileService.getStudentsByProgram(profile.program!, profile.level!).then(setStudents);
+    courseService.getCoursesByProgram(profile.program!, profile.level!).then(setCourses);
   }, [profile]);
 
   const loadAttendance = async (sessionId: string) => {
@@ -43,6 +48,36 @@ export function AttendanceTrackingPage() {
     if (value) loadAttendance(value);
   };
 
+  const handleDownloadReport = async (format: 'csv' | 'excel' | 'pdf') => {
+    if (!selectedCourse) {
+      toast.error('Please select a course');
+      return;
+    }
+
+    setReportLoading(true);
+    try {
+      const report = await attendanceService.getAttendanceReportByCourse(selectedCourse);
+      const courseData = courses.find(c => c.id === selectedCourse);
+      const filename = `attendance-${courseData?.code || 'report'}`;
+
+      if (format === 'csv') {
+        exportToCSV(report, filename);
+      } else if (format === 'excel') {
+        exportToExcel(report, filename);
+      } else if (format === 'pdf') {
+        const columns = ['Full Name', 'Index Number', 'Sessions Attended', 'Total Sessions', 'Attendance Summary'];
+        exportToPDF(report, filename, `Attendance Report - ${courseData?.title}`, columns);
+      }
+
+      toast.success(`Attendance report exported as ${format.toUpperCase()}`);
+    } catch (error) {
+      toast.error(`Failed to export report as ${format.toUpperCase()}`);
+      console.error(error);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const presentIds = new Set(attendance.map((a) => a.student_id));
   const absentStudents = students.filter((s) => !presentIds.has(s.id));
   const rate = students.length > 0 ? Math.round((attendance.length / students.length) * 100) : 0;
@@ -57,6 +92,61 @@ export function AttendanceTrackingPage() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Track attendance for your sessions</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Download Attendance Report
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Select Course</label>
+            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a course to download report" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.code} - {c.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedCourse && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadReport('csv')}
+                disabled={reportLoading}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadReport('excel')}
+                disabled={reportLoading}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadReport('pdf')}
+                disabled={reportLoading}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {selectedSession && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
