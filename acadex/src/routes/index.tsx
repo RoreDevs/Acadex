@@ -15,6 +15,7 @@ import { MarkAttendancePage } from '@/pages/student/MarkAttendancePage';
 import { RecordsPage } from '@/pages/student/RecordsPage';
 import { CoursesPage } from '@/pages/student/CoursesPage';
 import { StudentSlidesPage } from '@/pages/student/StudentSlidesPage';
+import { StudentAssignmentsPage } from '@/pages/student/StudentAssignmentsPage';
 import { NotificationsPage as StudentNotificationsPage } from '@/pages/student/NotificationsPage';
 
 // Admin Pages
@@ -24,6 +25,7 @@ import { SessionManagementPage } from '@/pages/admin/SessionManagementPage';
 import { AttendanceTrackingPage } from '@/pages/admin/AttendanceTrackingPage';
 import { AdminCoursesPage } from '@/pages/admin/CoursesPage';
 import { AdminSlidesPage } from '@/pages/admin/AdminSlidesPage';
+import { AdminAssignmentsPage } from '@/pages/admin/AdminAssignmentsPage';
 import { AdminAnalyticsPage } from '@/pages/admin/AnalyticsPage';
 import { AdminStudentsPage } from '@/pages/admin/StudentsPage';
 
@@ -37,6 +39,7 @@ import { SuperAdminSessionsPage } from '@/pages/super-admin/SessionsPage';
 import { PromotionsPage } from '@/pages/super-admin/PromotionsPage';
 import { AttendancePage } from '@/pages/super-admin/AttendancePage';
 import { SuperAdminSlidesPage } from '@/pages/super-admin/SuperAdminSlidesPage';
+import { SuperAdminAssignmentsPage } from '@/pages/super-admin/SuperAdminAssignmentsPage';
 import { NotificationsPage as SuperAdminNotificationsPage } from '@/pages/super-admin/NotificationsPage';
 import { AuditLogPage } from '@/pages/super-admin/AuditLogPage';
 
@@ -78,15 +81,17 @@ export const router = createBrowserRouter([
       { path: 'records', element: <RecordsPage /> },
       { path: 'courses', element: <CoursesPage /> },
       { path: 'slides', element: <StudentSlidesPage /> },
+      { path: 'assignments', element: <StudentAssignmentsPage /> },
       { path: 'notifications', element: <StudentNotificationsPage /> },
 
-      // Admin Routes
+       // Admin Routes
       { path: 'admin/dashboard', element: <RouteGuard roles={['admin', 'super_admin']}><AdminDashboardPage /></RouteGuard> },
       { path: 'admin/generate-session', element: <RouteGuard roles={['admin', 'super_admin']}><GenerateSessionPage /></RouteGuard> },
       { path: 'admin/sessions', element: <RouteGuard roles={['admin', 'super_admin']}><SessionManagementPage /></RouteGuard> },
       { path: 'admin/attendance', element: <RouteGuard roles={['admin', 'super_admin']}><AttendanceTrackingPage /></RouteGuard> },
       { path: 'admin/courses', element: <RouteGuard roles={['admin', 'super_admin']}><AdminCoursesPage /></RouteGuard> },
       { path: 'admin/slides', element: <RouteGuard roles={['admin', 'super_admin']}><AdminSlidesPage /></RouteGuard> },
+      { path: 'admin/assignments', element: <RouteGuard roles={['admin', 'super_admin']}><AdminAssignmentsPage /></RouteGuard> },
       { path: 'admin/analytics', element: <RouteGuard roles={['admin', 'super_admin']}><AdminAnalyticsPage /></RouteGuard> },
       { path: 'admin/students', element: <RouteGuard roles={['admin', 'super_admin']}><AdminStudentsPage /></RouteGuard> },
     ],
@@ -95,17 +100,18 @@ export const router = createBrowserRouter([
     path: '/super-admin',
     element: <RouteGuard roles={['super_admin']}><SuperAdminLayout /></RouteGuard>,
     children: [
-      { index: true, element: <SuperAdminDashboardPage /> },
-      { path: 'students', element: <StudentManagementPage /> },
-      { path: 'admins', element: <AdminManagementPage /> },
-      { path: 'programs', element: <ProgramManagementPage /> },
-      { path: 'courses', element: <CourseManagementPage /> },
-      { path: 'sessions', element: <SuperAdminSessionsPage /> },
-      { path: 'promotions', element: <PromotionsPage /> },
-      { path: 'attendance', element: <AttendancePage /> },
-      { path: 'slides', element: <SuperAdminSlidesPage /> },
-      { path: 'notifications', element: <SuperAdminNotificationsPage /> },
-      { path: 'audit', element: <AuditLogPage /> },
+       { index: true, element: <SuperAdminDashboardPage /> },
+       { path: 'students', element: <StudentManagementPage /> },
+       { path: 'admins', element: <AdminManagementPage /> },
+       { path: 'programs', element: <ProgramManagementPage /> },
+       { path: 'courses', element: <CourseManagementPage /> },
+       { path: 'sessions', element: <SuperAdminSessionsPage /> },
+       { path: 'promotions', element: <PromotionsPage /> },
+       { path: 'attendance', element: <AttendancePage /> },
+       { path: 'slides', element: <SuperAdminSlidesPage /> },
+       { path: 'assignments', element: <SuperAdminAssignmentsPage /> },
+       { path: 'notifications', element: <SuperAdminNotificationsPage /> },
+       { path: 'audit', element: <AuditLogPage /> },
     ],
   },
 ]);

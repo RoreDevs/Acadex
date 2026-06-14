@@ -5,7 +5,7 @@ import {
   LayoutDashboard, User, QrCode, ClipboardList, BookOpen,
   LogOut, Menu, X, ChevronLeft, GraduationCap, Shield,
   Users, Calendar, Settings, BarChart3, Globe, Bell,
-  Layers, FileText, Activity, Presentation
+  Layers, FileText, Activity, Presentation, ListChecks
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Records', icon: <ClipboardList className="w-5 h-5" />, href: '/records' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/courses' },
     { label: 'Slides', icon: <Presentation className="w-5 h-5" />, href: '/slides' },
+    { label: 'Assignments', icon: <ListChecks className="w-5 h-5" />, href: '/assignments' },
     { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/notifications' },
   ];
 
@@ -52,6 +53,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/admin/attendance' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/admin/courses' },
     { label: 'Slides', icon: <Presentation className="w-5 h-5" />, href: '/admin/slides' },
+    { label: 'Assignments', icon: <ListChecks className="w-5 h-5" />, href: '/admin/assignments' },
     { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/admin/analytics' },
     { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/notifications' },
   ];
@@ -65,6 +67,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Sessions', icon: <Calendar className="w-5 h-5" />, href: '/super-admin/sessions' },
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/super-admin/attendance' },
     { label: 'Slides', icon: <Presentation className="w-5 h-5" />, href: '/super-admin/slides' },
+    { label: 'Assignments', icon: <ListChecks className="w-5 h-5" />, href: '/super-admin/assignments' },
     { label: 'Promotions', icon: <Activity className="w-5 h-5" />, href: '/super-admin/promotions' },
     { label: 'Audit Logs', icon: <FileText className="w-5 h-5" />, href: '/super-admin/audit' },
     { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/super-admin/notifications' },

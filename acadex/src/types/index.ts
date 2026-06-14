@@ -83,6 +83,20 @@ export interface Slide {
   profiles?: { full_name: string };
 }
 
+export interface Assignment {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string;
+  due_date?: string;
+  posted_by?: string;
+  program_id?: string;
+  created_at: string;
+  updated_at?: string;
+  courses?: { code: string; title: string };
+  profiles?: { full_name: string };
+}
+
 export interface AuditLog {
   id: string;
   user_id: string;
