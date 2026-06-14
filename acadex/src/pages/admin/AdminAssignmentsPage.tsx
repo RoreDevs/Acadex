@@ -52,7 +52,7 @@ export function AdminAssignmentsPage() {
       setCourses(coursesData);
       const assignmentsMap: Record<string, any[]> = {};
       for (const course of coursesData) {
-        const assignments = await assignmentService.getAssignmentsByCourse(course.id);
+        const assignments = await assignmentService.getAssignmentsByCourse(course.id, programId);
         assignmentsMap[course.id] = assignments;
       }
       setAssignmentsByCourse(assignmentsMap);
@@ -63,7 +63,7 @@ export function AdminAssignmentsPage() {
   };
 
   const loadAssignmentsForCourse = async (courseId: string) => {
-    const assignments = await assignmentService.getAssignmentsByCourse(courseId);
+    const assignments = await assignmentService.getAssignmentsByCourse(courseId, programId);
     setAssignmentsByCourse((prev) => ({ ...prev, [courseId]: assignments }));
   };
 

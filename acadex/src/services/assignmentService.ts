@@ -1,12 +1,17 @@
 import { supabase } from '@/lib/supabase';
 
 export const assignmentService = {
-  async getAssignmentsByCourse(courseId: string) {
-    const { data } = await supabase
+  async getAssignmentsByCourse(courseId: string, programId?: string) {
+    let query = supabase
       .from('assignments')
       .select('*, profiles(full_name)')
-      .eq('course_id', courseId)
-      .order('created_at', { ascending: false });
+      .eq('course_id', courseId);
+    
+    if (programId) {
+      query = query.eq('program_id', programId);
+    }
+    
+    const { data } = await query.order('created_at', { ascending: false });
     return (data || []) as any[];
   },
 
