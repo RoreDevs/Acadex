@@ -146,3 +146,4 @@ export const attendanceService = {
 
     return report;
   },
+};
