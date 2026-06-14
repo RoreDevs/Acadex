@@ -5,12 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { assignmentService } from '@/services/assignmentService';
+import { AssignmentDetailModal } from '@/components/AssignmentDetailModal';
 import toast from 'react-hot-toast';
 
 export function StudentAssignmentsPage() {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAssignment, setSelectedAssignment] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -22,6 +25,11 @@ export function StudentAssignmentsPage() {
       })
       .finally(() => setLoading(false));
   }, [user]);
+
+  const handleAssignmentClick = (assignment: any) => {
+    setSelectedAssignment(assignment);
+    setIsModalOpen(true);
+  };
 
   const grouped = assignments.reduce<Record<string, any[]>>((acc, assignment) => {
     const key = assignment.courses?.code || 'Unknown';
@@ -52,12 +60,13 @@ export function StudentAssignmentsPage() {
         </Card>
       ) : (
         <div className="space-y-6">
-          {/* Newest Assignment Highlight */}
-          {newestAssignment && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border-2 border-primary-500/30 bg-gradient-to-br from-primary-50 to-primary-50/50 dark:from-primary-900/20 dark:to-primary-900/5 p-4"
+           {/* Newest Assignment Highlight */}
+           {newestAssignment && (
+             <motion.div
+               initial={{ opacity: 0, y: 8 }}
+               animate={{ opacity: 1, y: 0 }}
+               onClick={() => handleAssignmentClick(newestAssignment)}
+               className="rounded-xl border-2 border-primary-500/30 bg-gradient-to-br from-primary-50 to-primary-50/50 dark:from-primary-900/20 dark:to-primary-900/5 p-4 cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center shrink-0">
@@ -106,12 +115,13 @@ export function StudentAssignmentsPage() {
                 </h2>
                 <div className="space-y-2">
                    {courseAssignments.filter(a => !newestAssignment || a.id !== newestAssignment.id).map((assignment, i) => (
-                    <motion.div
-                      key={assignment.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      className="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow"
+                     <motion.div
+                       key={assignment.id}
+                       initial={{ opacity: 0, y: 8 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       transition={{ delay: i * 0.03 }}
+                       onClick={() => handleAssignmentClick(assignment)}
+                       className="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow cursor-pointer"
                     >
                       <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center shrink-0 mt-0.5">
                         <FileText className="w-5 h-5 text-orange-500" />
@@ -147,7 +157,12 @@ export function StudentAssignmentsPage() {
             ))}
           </div>
         </div>
-      )}
-    </motion.div>
-  );
-}
+       )}
+       <AssignmentDetailModal
+         open={isModalOpen}
+         onOpenChange={setIsModalOpen}
+         assignment={selectedAssignment}
+       />
+     </motion.div>
+   );
+ }
