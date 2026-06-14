@@ -5,12 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { assignmentService } from '@/services/assignmentService';
+import { AssignmentDetailModal } from '@/components/assignments/AssignmentDetailModal';
 import toast from 'react-hot-toast';
 
 export function StudentAssignmentsPage() {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAssignment, setSelectedAssignment] = useState<any | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -52,13 +55,17 @@ export function StudentAssignmentsPage() {
         </Card>
       ) : (
         <div className="space-y-6">
-          {/* Newest Assignment Highlight */}
-          {newestAssignment && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border-2 border-primary-500/30 bg-gradient-to-br from-primary-50 to-primary-50/50 dark:from-primary-900/20 dark:to-primary-900/5 p-4"
-            >
+           {/* Newest Assignment Highlight */}
+           {newestAssignment && (
+             <motion.div
+               initial={{ opacity: 0, y: 8 }}
+               animate={{ opacity: 1, y: 0 }}
+               onClick={() => {
+                 setSelectedAssignment(newestAssignment);
+                 setIsDetailModalOpen(true);
+               }}
+               className="rounded-xl border-2 border-primary-500/30 bg-gradient-to-br from-primary-50 to-primary-50/50 dark:from-primary-900/20 dark:to-primary-900/5 p-4 cursor-pointer hover:border-primary-500/60 transition-colors"
+             >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center shrink-0">
                   <FileText className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -105,14 +112,18 @@ export function StudentAssignmentsPage() {
                   <Badge variant="outline" className="ml-2 text-xs">{courseAssignments.length}</Badge>
                 </h2>
                 <div className="space-y-2">
-                  {courseAssignments.map((assignment, i) => (
-                    <motion.div
-                      key={assignment.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      className="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow"
-                    >
+                   {courseAssignments.map((assignment, i) => (
+                     <motion.div
+                       key={assignment.id}
+                       initial={{ opacity: 0, y: 8 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       transition={{ delay: i * 0.03 }}
+                       onClick={() => {
+                         setSelectedAssignment(assignment);
+                         setIsDetailModalOpen(true);
+                       }}
+                       className="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-sm hover:border-primary-200 dark:hover:border-primary-800 transition-all cursor-pointer"
+                     >
                       <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center shrink-0 mt-0.5">
                         <FileText className="w-5 h-5 text-orange-500" />
                       </div>
@@ -147,7 +158,15 @@ export function StudentAssignmentsPage() {
             ))}
           </div>
         </div>
-      )}
+       )}
+      <AssignmentDetailModal
+        assignment={selectedAssignment}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedAssignment(null);
+        }}
+      />
     </motion.div>
   );
 }

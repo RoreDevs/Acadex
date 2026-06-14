@@ -20,93 +20,88 @@ export const assignmentService = {
   },
 
   async getAssignmentsForStudent(studentId: string) {
-    // Get student's profile to get their program
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('program')
-      .eq('id', studentId)
-      .single();
-    
-    if (profileError || !profile) {
-      console.error('Error fetching student profile:', profileError);
-      return [];
-    }
+    try {
+      // Get student's profile to get their program
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('program')
+        .eq('id', studentId)
+        .single();
+      
+      if (profileError || !profile) {
+        console.error('Error fetching student profile:', profileError);
+        return [];
+      }
 
-    // Get student's enrolled courses
-    const { data: enrollments, error: enrollmentError } = await supabase
-      .from('enrollments')
-      .select('course_id')
-      .eq('student_id', studentId);
-    
-    if (enrollmentError) {
-      console.error('Error fetching enrollments:', enrollmentError);
-    }
+      // Get program ID from program code
+      const { data: programData, error: programError } = await supabase
+        .from('programs')
+        .select('id')
+        .eq('code', profile.program)
+        .single();
+      
+      if (programError) {
+        console.error('Error fetching program:', programError);
+      }
 
-    // Get program ID from program code/name
-    const { data: programData, error: programError } = await supabase
-      .from('programs')
-      .select('id')
-      .eq('code', profile.program)
-      .single();
-    
-    if (programError) {
-      console.error('Error fetching program:', programError);
-    }
+      // Get student's enrolled courses
+      const { data: enrollments, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('student_id', studentId);
+      
+      if (enrollmentError) {
+        console.error('Error fetching enrollments:', enrollmentError);
+      }
 
-    let query = supabase
-      .from('assignments')
-      .select('*, courses(code, title), profiles(full_name)')
-      .order('created_at', { ascending: false });
+      // Fetch assignments from both sources
+      let allAssignments: any[] = [];
 
-    // If student has enrollments, query by course IDs
-    if (enrollments && enrollments.length > 0) {
-      const courseIds = enrollments.map((e) => e.course_id);
-      query = query.in('course_id', courseIds);
-    }
-
-    // Also query assignments for their program
-    if (programData) {
+      // Query 1: Get assignments by enrolled courses
       if (enrollments && enrollments.length > 0) {
-        // Use OR logic by querying program separately and merging
-        const { data: programAssignments, error: programAssignmentError } = await supabase
+        const courseIds = enrollments.map((e) => e.course_id);
+        const { data: courseAssignments, error: courseError } = await supabase
+          .from('assignments')
+          .select('*, courses(code, title), profiles(full_name)')
+          .in('course_id', courseIds)
+          .order('created_at', { ascending: false });
+
+        if (courseError) {
+          console.error('Error fetching course assignments:', courseError);
+        } else if (courseAssignments) {
+          allAssignments = courseAssignments;
+        }
+      }
+
+      // Query 2: Get assignments for their program
+      if (programData) {
+        const { data: programAssignments, error: programError } = await supabase
           .from('assignments')
           .select('*, courses(code, title), profiles(full_name)')
           .eq('program_id', programData.id)
           .order('created_at', { ascending: false });
 
-        if (programAssignmentError) {
-          console.error('Error fetching program assignments:', programAssignmentError);
+        if (programError) {
+          console.error('Error fetching program assignments:', programError);
+        } else if (programAssignments) {
+          // Merge and deduplicate by ID
+          const seenIds = new Set(allAssignments.map((a) => a.id));
+          const newAssignments = programAssignments.filter(
+            (a) => !seenIds.has(a.id)
+          );
+          allAssignments = [...allAssignments, ...newAssignments];
         }
-
-        const { data: courseAssignments, error: courseError } = await query;
-
-        if (courseError) {
-          console.error('Error fetching course assignments:', courseError);
-          return (programAssignments || []) as any[];
-        }
-
-        // Merge and deduplicate by ID
-        const merged = [...(courseAssignments || []), ...(programAssignments || [])];
-        const seen = new Set<string>();
-        return merged.filter((a) => {
-          if (seen.has(a.id)) return false;
-          seen.add(a.id);
-          return true;
-        }) as any[];
-      } else {
-        // Only query by program if no enrollments
-        query = query.eq('program_id', programData.id);
       }
-    }
 
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching assignments:', error);
+      // Sort by created_at descending
+      return allAssignments.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ) as any[];
+    } catch (error) {
+      console.error('Unexpected error in getAssignmentsForStudent:', error);
       return [];
     }
-    
-    return (data || []) as any[];
   },
 
   async getAllAssignments() {
