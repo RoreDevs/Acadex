@@ -105,7 +105,7 @@ export function StudentAssignmentsPage() {
                   <Badge variant="outline" className="ml-2 text-xs">{courseAssignments.length}</Badge>
                 </h2>
                 <div className="space-y-2">
-                  {courseAssignments.map((assignment, i) => (
+                   {courseAssignments.filter(a => !newestAssignment || a.id !== newestAssignment.id).map((assignment, i) => (
                     <motion.div
                       key={assignment.id}
                       initial={{ opacity: 0, y: 8 }}
