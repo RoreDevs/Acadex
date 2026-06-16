@@ -11,7 +11,6 @@ const lazyLoad = (importFn: () => Promise<any>, name: string) =>
 const LoginPage = lazyLoad(() => import('@/pages/auth/LoginPage'), 'LoginPage');
 const RegisterPage = lazyLoad(() => import('@/pages/auth/RegisterPage'), 'RegisterPage');
 const ForgotPasswordPage = lazyLoad(() => import('@/pages/auth/ForgotPasswordPage'), 'ForgotPasswordPage');
-const ResetPasswordPage = lazyLoad(() => import('@/pages/auth/ResetPasswordPage'), 'ResetPasswordPage');
 const SuperAdminRegisterPage = lazyLoad(() => import('@/pages/auth/SuperAdminRegisterPage'), 'SuperAdminRegisterPage');
 
 // Student Pages
@@ -62,7 +61,6 @@ export const router = createBrowserRouter([
       { path: 'login', element: <PublicRoute>{S(LoginPage)}</PublicRoute> },
       { path: 'register', element: <PublicRoute>{S(RegisterPage)}</PublicRoute> },
       { path: 'forgot-password', element: <PublicRoute>{S(ForgotPasswordPage)}</PublicRoute> },
-      { path: 'reset-password', element: S(ResetPasswordPage) },
       { path: 'super-admin/register', element: <PublicRoute>{S(SuperAdminRegisterPage)}</PublicRoute> },
     ],
   },

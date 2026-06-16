@@ -8,6 +8,8 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  recovering: boolean;
+  clearRecovery: () => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (data: {
     email: string;
@@ -30,8 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [recovering, setRecovering] = useState(false);
 
   const loading = authLoading || (user !== null && profileLoading);
+
+  const clearRecovery = () => setRecovering(false);
 
   const fetchProfile = async (userId: string) => {
     setProfileLoading(true);
@@ -62,8 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    const isRecovery = window.location.hash.includes('type=recovery');
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        if (isRecovery) setRecovering(true);
         setUser(session.user);
         await fetchProfile(session.user.id);
       } else {
@@ -195,6 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         profile,
         loading,
+        recovering,
+        clearRecovery,
         signIn,
         signUp,
         signOut,

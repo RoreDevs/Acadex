@@ -3,10 +3,11 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/shared/Sidebar';
 import { TopBar } from '@/components/shared/TopBar';
+import { PasswordResetDialog } from '@/components/shared/PasswordResetDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function DashboardLayout() {
-  const { profile } = useAuth();
+  const { profile, recovering, clearRecovery } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdminView, setIsAdminView] = useState(() => location.pathname.startsWith('/admin'));
@@ -23,6 +24,7 @@ export function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <PasswordResetDialog open={recovering} onClose={clearRecovery} />
       <Sidebar
         role={profile?.role || 'student'}
         isAdminView={isAdminView}
@@ -44,10 +46,11 @@ export function DashboardLayout() {
 }
 
 export function SuperAdminLayout() {
-  const { profile } = useAuth();
+  const { profile, recovering, clearRecovery } = useAuth();
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <PasswordResetDialog open={recovering} onClose={clearRecovery} />
       <Sidebar role={profile?.role || 'super_admin'} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar />
