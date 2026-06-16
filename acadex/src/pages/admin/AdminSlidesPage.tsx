@@ -141,7 +141,7 @@ export function AdminSlidesPage() {
               </div>
               <div className="space-y-2">
                 <Label>File</Label>
-                <Input type="file" onChange={(e) => setSlideFile(e.target.files?.[0] || null)} accept=".pdf,.ppt,.pptx,.doc,.docx,.txt" />
+                <Input type="file" onChange={(e) => setSlideFile(e.target.files?.[0] || null)} />
                 {slideFile && (
                   <p className="text-xs text-gray-500">{slideFile.name} ({slideService.formatFileSize(slideFile.size)})</p>
                 )}
