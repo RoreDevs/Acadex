@@ -1,8 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Slide } from '@/types';
 
-const STORAGE_BUCKET = 'slides';
-
 export const slideService = {
   async getSlidesByCourse(courseId: string) {
     const { data } = await supabase
@@ -46,39 +44,45 @@ export const slideService = {
     return (data || []) as any[];
   },
 
-  async uploadSlide(file: File, data: {
+  async uploadFile(file: File, programId: string, courseId: string) {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `slides/${programId}/${courseId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('slides')
+      .upload(filePath, file);
+
+    if (uploadError) return { error: uploadError, url: null };
+
+    const { data: urlData } = supabase.storage
+      .from('slides')
+      .getPublicUrl(filePath);
+
+    return { error: null, url: urlData.publicUrl };
+  },
+
+  async createSlideRecord(data: {
     title: string;
     course_id: string;
     program_id: string;
     uploaded_by: string;
+    file_url: string;
+    file_name: string;
+    file_size: number;
   }) {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `${data.program_id}/${data.course_id}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(filePath, file);
-
-    if (uploadError) return { error: uploadError };
-
-    const { data: urlData } = supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(filePath);
-
-    const { error: insertError } = await supabase.from('slides').insert([
+    const { error } = await supabase.from('slides').insert([
       {
         course_id: data.course_id,
         title: data.title,
-        file_url: urlData.publicUrl,
-        file_name: file.name,
-        file_size: file.size,
+        file_url: data.file_url,
+        file_name: data.file_name,
+        file_size: data.file_size,
         uploaded_by: data.uploaded_by,
         program_id: data.program_id,
       },
     ]);
-
-    return { error: insertError };
+    return { error };
   },
 
   async deleteSlide(id: string) {
@@ -89,8 +93,8 @@ export const slideService = {
       .single();
 
     if (slide?.file_url) {
-      const path = slide.file_url.split('/').slice(-3).join('/');
-      await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+      const path = slide.file_url.split('/').slice(-4).join('/');
+      await supabase.storage.from('slides').remove([path]);
     }
 
     const { error } = await supabase

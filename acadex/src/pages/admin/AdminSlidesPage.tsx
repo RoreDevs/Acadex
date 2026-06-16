@@ -66,11 +66,16 @@ export function AdminSlidesPage() {
       return;
     }
     setUploading(true);
-    const { error } = await slideService.uploadSlide(slideFile, {
+    const { error: uploadError, url } = await slideService.uploadFile(slideFile, programId, selectedCourseId);
+    if (uploadError) { toast.error(`Upload failed: ${uploadError.message}`); setUploading(false); return; }
+    const { error } = await slideService.createSlideRecord({
       title: slideTitle,
       course_id: selectedCourseId,
       program_id: programId,
       uploaded_by: profile.id,
+      file_url: url!,
+      file_name: slideFile.name,
+      file_size: slideFile.size,
     });
     setUploading(false);
     if (error) { toast.error(`Upload failed: ${error.message}`); return; }
