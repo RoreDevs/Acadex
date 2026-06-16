@@ -8,3 +8,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+interface Window {
+  __hideSplash?: () => void;
+  __clearStuckSw?: () => void;
+}

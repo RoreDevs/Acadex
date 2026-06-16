@@ -68,7 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const isRecovery = window.location.hash.includes('type=recovery');
+
+    const timeout = setTimeout(() => {
+      setProfileLoading(false);
+      setAuthLoading(false);
+    }, 6000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      clearTimeout(timeout);
       if (session?.user) {
         if (isRecovery) setRecovering(true);
         setUser(session.user);
