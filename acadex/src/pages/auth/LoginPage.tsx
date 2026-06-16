@@ -93,7 +93,7 @@ export function LoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="you@university.edu"
+              placeholder="youremail@gmail.com"
               {...register('email')}
               error={errors.email?.message}
             />
