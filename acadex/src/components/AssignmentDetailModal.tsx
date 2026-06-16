@@ -1,6 +1,7 @@
-import { Calendar, User, Clock, FileText } from 'lucide-react';
+import { Calendar, User, Clock, FileText, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { assignmentService } from '@/services/assignmentService';
 
 interface AssignmentDetailModalProps {
@@ -42,6 +43,22 @@ export function AssignmentDetailModal({
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Description</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{assignment.description}</p>
+            </div>
+          )}
+
+          {/* Attachment */}
+          {assignment.file_url && (
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Attachment</h3>
+              <a href={assignment.file_url} target="_blank" rel="noopener noreferrer" download>
+                <Button variant="outline" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  {assignment.file_name || 'Download File'}
+                  {assignment.file_size && (
+                    <span className="text-xs text-gray-400">({assignmentService.formatFileSize(assignment.file_size)})</span>
+                  )}
+                </Button>
+              </a>
             </div>
           )}
 

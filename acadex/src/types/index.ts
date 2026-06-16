@@ -91,6 +91,9 @@ export interface Assignment {
   due_date?: string;
   posted_by?: string;
   program_id?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
   created_at: string;
   updated_at?: string;
   courses?: { code: string; title: string };

@@ -85,6 +85,9 @@ export const assignmentService = {
     due_date?: string;
     posted_by: string;
     program_id: string;
+    file_url?: string;
+    file_name?: string;
+    file_size?: number;
   }) {
     const { error } = await supabase
       .from('assignments')
@@ -96,6 +99,9 @@ export const assignmentService = {
           due_date: data.due_date,
           posted_by: data.posted_by,
           program_id: data.program_id,
+          file_url: data.file_url,
+          file_name: data.file_name,
+          file_size: data.file_size,
         },
       ]);
 
@@ -116,12 +122,51 @@ export const assignmentService = {
   },
 
   async deleteAssignment(id: string) {
+    const { data: assignment } = await supabase
+      .from('assignments')
+      .select('file_url')
+      .eq('id', id)
+      .single();
+
+    if (assignment?.file_url) {
+      await this.deleteFile(assignment.file_url);
+    }
+
     const { error } = await supabase
       .from('assignments')
       .delete()
       .eq('id', id);
 
     return { error };
+  },
+
+  async uploadFile(file: File, programId: string, courseId: string) {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `assignments/${programId}/${courseId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('assignments')
+      .upload(filePath, file);
+
+    if (uploadError) return { error: uploadError, url: null };
+
+    const { data: urlData } = supabase.storage
+      .from('assignments')
+      .getPublicUrl(filePath);
+
+    return { error: null, url: urlData.publicUrl };
+  },
+
+  async deleteFile(fileUrl: string) {
+    const path = fileUrl.split('/').slice(-4).join('/');
+    await supabase.storage.from('assignments').remove([path]);
+  },
+
+  formatFileSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   },
 
   formatDueDate(date: string | null) {

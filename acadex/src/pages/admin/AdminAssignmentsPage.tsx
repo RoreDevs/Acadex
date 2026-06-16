@@ -33,6 +33,7 @@ export function AdminAssignmentsPage() {
   const [assignmentTitle, setAssignmentTitle] = useState('');
   const [assignmentDescription, setAssignmentDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
   const [posting, setPosting] = useState(false);
 
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
@@ -75,6 +76,16 @@ export function AdminAssignmentsPage() {
       return;
     }
     setPosting(true);
+    let fileUrl: string | undefined;
+    let fileName: string | undefined;
+    let fileSize: number | undefined;
+    if (assignmentFile) {
+      const { error: uploadError, url } = await assignmentService.uploadFile(assignmentFile, programId, selectedCourseId);
+      if (uploadError) { toast.error('File upload failed'); setPosting(false); return; }
+      fileUrl = url!;
+      fileName = assignmentFile.name;
+      fileSize = assignmentFile.size;
+    }
     const { error } = await assignmentService.createAssignment({
       title: assignmentTitle,
       description: assignmentDescription,
@@ -82,6 +93,9 @@ export function AdminAssignmentsPage() {
       course_id: selectedCourseId,
       program_id: programId,
       posted_by: profile.id,
+      file_url: fileUrl,
+      file_name: fileName,
+      file_size: fileSize,
     });
     setPosting(false);
     if (error) { toast.error(`Failed: ${error.message}`); return; }
@@ -91,6 +105,7 @@ export function AdminAssignmentsPage() {
     setAssignmentTitle('');
     setAssignmentDescription('');
     setDueDate('');
+    setAssignmentFile(null);
     await loadAssignmentsForCourse(selectedCourseId);
   };
 
@@ -191,6 +206,13 @@ export function AdminAssignmentsPage() {
                 <Label>Due Date</Label>
                 <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
               </div>
+              <div className="space-y-2">
+                <Label>Attachment (optional)</Label>
+                <Input type="file" onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)} />
+                {assignmentFile && (
+                  <p className="text-xs text-gray-500">{assignmentFile.name} ({assignmentService.formatFileSize(assignmentFile.size)})</p>
+                )}
+              </div>
               <Button className="w-full" onClick={handlePost} disabled={posting}>
                 {posting ? 'Posting...' : 'Post Assignment'}
               </Button>
@@ -277,6 +299,17 @@ export function AdminAssignmentsPage() {
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <Calendar className="w-4 h-4" />
                                 <span>Due: {assignmentService.formatDueDate(assignment.due_date)}</span>
+                              </div>
+                            )}
+                            {assignment.file_url && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <a href={assignment.file_url} target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:text-primary-600 underline flex items-center gap-1">
+                                  <FileText className="w-4 h-4" />
+                                  {assignment.file_name || 'View Attachment'}
+                                </a>
+                                {assignment.file_size && (
+                                  <span className="text-xs text-gray-400">({assignmentService.formatFileSize(assignment.file_size)})</span>
+                                )}
                               </div>
                             )}
                           </motion.div>
