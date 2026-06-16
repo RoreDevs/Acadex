@@ -19,6 +19,7 @@ const ProfilePage = lazyLoad(() => import('@/pages/student/ProfilePage'), 'Profi
 const MarkAttendancePage = lazyLoad(() => import('@/pages/student/MarkAttendancePage'), 'MarkAttendancePage');
 const RecordsPage = lazyLoad(() => import('@/pages/student/RecordsPage'), 'RecordsPage');
 const CoursesPage = lazyLoad(() => import('@/pages/student/CoursesPage'), 'CoursesPage');
+const StudentSlidesPage = lazyLoad(() => import('@/pages/student/StudentSlidesPage'), 'StudentSlidesPage');
 const StudentAssignmentsPage = lazyLoad(() => import('@/pages/student/StudentAssignmentsPage'), 'StudentAssignmentsPage');
 const StudentNotificationsPage = lazyLoad(() => import('@/pages/student/NotificationsPage'), 'NotificationsPage');
 
@@ -28,6 +29,7 @@ const GenerateSessionPage = lazyLoad(() => import('@/pages/admin/GenerateSession
 const SessionManagementPage = lazyLoad(() => import('@/pages/admin/SessionManagementPage'), 'SessionManagementPage');
 const AttendanceTrackingPage = lazyLoad(() => import('@/pages/admin/AttendanceTrackingPage'), 'AttendanceTrackingPage');
 const AdminCoursesPage = lazyLoad(() => import('@/pages/admin/CoursesPage'), 'AdminCoursesPage');
+const AdminSlidesPage = lazyLoad(() => import('@/pages/admin/AdminSlidesPage'), 'AdminSlidesPage');
 const AdminAssignmentsPage = lazyLoad(() => import('@/pages/admin/AdminAssignmentsPage'), 'AdminAssignmentsPage');
 const AdminAnalyticsPage = lazyLoad(() => import('@/pages/admin/AnalyticsPage'), 'AdminAnalyticsPage');
 const AdminStudentsPage = lazyLoad(() => import('@/pages/admin/StudentsPage'), 'AdminStudentsPage');
@@ -41,6 +43,7 @@ const CourseManagementPage = lazyLoad(() => import('@/pages/super-admin/CourseMa
 const SuperAdminSessionsPage = lazyLoad(() => import('@/pages/super-admin/SessionsPage'), 'SuperAdminSessionsPage');
 const PromotionsPage = lazyLoad(() => import('@/pages/super-admin/PromotionsPage'), 'PromotionsPage');
 const AttendancePage = lazyLoad(() => import('@/pages/super-admin/AttendancePage'), 'AttendancePage');
+const SuperAdminSlidesPage = lazyLoad(() => import('@/pages/super-admin/SuperAdminSlidesPage'), 'SuperAdminSlidesPage');
 const SuperAdminAssignmentsPage = lazyLoad(() => import('@/pages/super-admin/SuperAdminAssignmentsPage'), 'SuperAdminAssignmentsPage');
 const SuperAdminNotificationsPage = lazyLoad(() => import('@/pages/super-admin/NotificationsPage'), 'NotificationsPage');
 const AuditLogPage = lazyLoad(() => import('@/pages/super-admin/AuditLogPage'), 'AuditLogPage');
@@ -70,6 +73,7 @@ export const router = createBrowserRouter([
       { path: 'mark-attendance', element: S(MarkAttendancePage) },
       { path: 'records', element: S(RecordsPage) },
       { path: 'courses', element: S(CoursesPage) },
+      { path: 'slides', element: S(StudentSlidesPage) },
       { path: 'assignments', element: S(StudentAssignmentsPage) },
       { path: 'notifications', element: S(StudentNotificationsPage) },
       { path: 'admin/dashboard', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminDashboardPage)}</RouteGuard> },
@@ -77,6 +81,7 @@ export const router = createBrowserRouter([
       { path: 'admin/sessions', element: <RouteGuard roles={['admin', 'super_admin']}>{S(SessionManagementPage)}</RouteGuard> },
       { path: 'admin/attendance', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AttendanceTrackingPage)}</RouteGuard> },
       { path: 'admin/courses', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminCoursesPage)}</RouteGuard> },
+      { path: 'admin/slides', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminSlidesPage)}</RouteGuard> },
       { path: 'admin/assignments', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminAssignmentsPage)}</RouteGuard> },
       { path: 'admin/analytics', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminAnalyticsPage)}</RouteGuard> },
       { path: 'admin/students', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminStudentsPage)}</RouteGuard> },
@@ -94,6 +99,7 @@ export const router = createBrowserRouter([
       { path: 'sessions', element: S(SuperAdminSessionsPage) },
       { path: 'promotions', element: S(PromotionsPage) },
       { path: 'attendance', element: S(AttendancePage) },
+      { path: 'slides', element: S(SuperAdminSlidesPage) },
       { path: 'assignments', element: S(SuperAdminAssignmentsPage) },
       { path: 'notifications', element: S(SuperAdminNotificationsPage) },
       { path: 'audit', element: S(AuditLogPage) },
