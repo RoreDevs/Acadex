@@ -47,70 +47,25 @@ export const assignmentService = {
       console.error('Error fetching enrollments:', enrollmentError);
     }
 
-    // Get program ID from program code/name
-    const { data: programData, error: programError } = await supabase
-      .from('programs')
-      .select('id')
-      .eq('code', profile.program)
-      .single();
-    
-    if (programError) {
-      console.error('Error fetching program:', programError);
-    }
+    const programId = profile.program;
+    if (!programId) return [];
 
     let query = supabase
       .from('assignments')
       .select('*, courses(code, title), profiles(full_name)')
+      .eq('program_id', programId)
       .order('created_at', { ascending: false });
 
-    // If student has enrollments, query by course IDs
     if (enrollments && enrollments.length > 0) {
       const courseIds = enrollments.map((e) => e.course_id);
       query = query.in('course_id', courseIds);
     }
 
-    // Also query assignments for their program
-    if (programData) {
-      if (enrollments && enrollments.length > 0) {
-        // Use OR logic by querying program separately and merging
-        const { data: programAssignments, error: programAssignmentError } = await supabase
-          .from('assignments')
-          .select('*, courses(code, title), profiles(full_name)')
-          .eq('program_id', programData.id)
-          .order('created_at', { ascending: false });
-
-        if (programAssignmentError) {
-          console.error('Error fetching program assignments:', programAssignmentError);
-        }
-
-        const { data: courseAssignments, error: courseError } = await query;
-
-        if (courseError) {
-          console.error('Error fetching course assignments:', courseError);
-          return (programAssignments || []) as any[];
-        }
-
-        // Merge and deduplicate by ID
-        const merged = [...(courseAssignments || []), ...(programAssignments || [])];
-        const seen = new Set<string>();
-        return merged.filter((a) => {
-          if (seen.has(a.id)) return false;
-          seen.add(a.id);
-          return true;
-        }) as any[];
-      } else {
-        // Only query by program if no enrollments
-        query = query.eq('program_id', programData.id);
-      }
-    }
-
     const { data, error } = await query;
-    
     if (error) {
       console.error('Error fetching assignments:', error);
       return [];
     }
-    
     return (data || []) as any[];
   },
 
