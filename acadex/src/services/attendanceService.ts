@@ -80,25 +80,20 @@ export const attendanceService = {
   },
 
   async getStudentStats(studentId: string) {
-    const { data: enrolledCourses } = await supabase
-      .from('enrollments')
-      .select('course_id')
-      .eq('student_id', studentId);
+    const [enrolledCourses, attended] = await Promise.all([
+      supabase.from('enrollments').select('course_id').eq('student_id', studentId),
+      supabase.from('attendance').select('id', { count: 'exact' }).eq('student_id', studentId),
+    ]);
 
-    const courseIds = enrolledCourses?.map(e => e.course_id) || [];
+    const courseIds = enrolledCourses.data?.map(e => e.course_id) || [];
 
     const { data: sessions } = await supabase
       .from('sessions')
       .select('id', { count: 'exact' })
       .in('course_id', courseIds.length > 0 ? courseIds : ['none']);
 
-    const { data: attended } = await supabase
-      .from('attendance')
-      .select('id', { count: 'exact' })
-      .eq('student_id', studentId);
-
     const totalSessions = sessions?.length || 0;
-    const totalAttended = attended?.length || 0;
+    const totalAttended = attended.data?.length || 0;
     const totalCourses = courseIds.length;
     const rate = totalSessions > 0 ? Math.round((totalAttended / totalSessions) * 100) : 0;
 

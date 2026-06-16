@@ -70,6 +70,18 @@ export const sessionService = {
     return (data || []) as any[];
   },
 
+  async getUpcomingSessions(limit = 10) {
+    const now = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('sessions')
+      .select('*, courses(title, code)')
+      .gte('session_date', now)
+      .eq('is_active', true)
+      .order('session_date', { ascending: true })
+      .limit(limit);
+    return (data || []) as any[];
+  },
+
   async getSessionsByProgram(program: string, level: string) {
     const { data } = await supabase
       .from('sessions')

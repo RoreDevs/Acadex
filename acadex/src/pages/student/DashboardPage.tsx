@@ -26,17 +26,12 @@ export function StudentDashboardPage() {
         const [s, att, sessions, courses] = await Promise.all([
           attendanceService.getStudentStats(profile.id),
           attendanceService.getAttendanceByStudent(profile.id),
-          sessionService.getSessions(),
+          sessionService.getUpcomingSessions(5),
           courseService.getCoursesByProgram(profile.program!, profile.level!),
         ]);
         setStats({ ...s, total_courses: courses.length });
         setRecentAttendance(att.slice(0, 5));
-
-        const now = new Date();
-        const upcoming = (sessions || []).filter((s: any) =>
-          new Date(s.session_date) > now && s.is_active
-        ).slice(0, 5);
-        setUpcomingSessions(upcoming);
+        setUpcomingSessions(sessions || []);
 
         const trendMap: Record<string, number> = {};
         (att || []).forEach((a: any) => {
