@@ -46,31 +46,12 @@ export const slideService = {
     return (data || []) as any[];
   },
 
-  async ensureBucket() {
-    const { error: getError } = await supabase.storage.getBucket(STORAGE_BUCKET);
-    if (!getError) return;
-
-    const { error: createError } = await supabase.storage.createBucket(STORAGE_BUCKET, {
-      public: true,
-      fileSizeLimit: 52428800,
-    });
-    if (!createError) return;
-
-    const { error: rpcError } = await supabase.rpc('exec_sql', {
-      sql: `INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types) VALUES ('${STORAGE_BUCKET}', '${STORAGE_BUCKET}', TRUE, FALSE, 52428800, NULL) ON CONFLICT (id) DO NOTHING;`,
-    });
-    if (rpcError) {
-      console.error('Failed to ensure storage bucket:', rpcError.message);
-    }
-  },
-
   async uploadSlide(file: File, data: {
     title: string;
     course_id: string;
     program_id: string;
     uploaded_by: string;
   }) {
-    await this.ensureBucket();
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${data.program_id}/${data.course_id}/${fileName}`;
@@ -85,7 +66,7 @@ export const slideService = {
       .from(STORAGE_BUCKET)
       .getPublicUrl(filePath);
 
-    let { error: insertError } = await supabase.from('slides').insert([
+    const { error: insertError } = await supabase.from('slides').insert([
       {
         course_id: data.course_id,
         title: data.title,
@@ -96,34 +77,6 @@ export const slideService = {
         program_id: data.program_id,
       },
     ]);
-
-    if (insertError?.message?.includes('row-level security')) {
-      const fixSql = `DROP POLICY IF EXISTS "Admins and super admins can insert slides" ON slides; CREATE POLICY "Admins and super admins can insert slides" ON slides FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin')));`;
-      let fixed = false;
-      const rpcAttempts = [
-        { fn: 'exec_sql', params: { sql: fixSql } },
-        { fn: 'execute_sql', params: { sql_text: fixSql } },
-        { fn: 'raw_sql', params: { query: fixSql } },
-      ];
-      for (const { fn, params } of rpcAttempts) {
-        const { error: rpcErr } = await supabase.rpc(fn, params);
-        if (!rpcErr) { fixed = true; break; }
-      }
-      if (fixed) {
-        const { error: retryError } = await supabase.from('slides').insert([
-          {
-            course_id: data.course_id,
-            title: data.title,
-            file_url: urlData.publicUrl,
-            file_name: file.name,
-            file_size: file.size,
-            uploaded_by: data.uploaded_by,
-            program_id: data.program_id,
-          },
-        ]);
-        if (!retryError) insertError = null;
-      }
-    }
 
     return { error: insertError };
   },
