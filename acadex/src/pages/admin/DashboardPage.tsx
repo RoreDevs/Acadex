@@ -36,6 +36,20 @@ export function AdminDashboardPage() {
   const isBtechCSLevel100 = programName === 'BTECH COMPUTER SCIENCE' && profile?.level === 'Level 100';
 
   useEffect(() => {
+    if (!profile?.id) return;
+    try {
+      const saved = localStorage.getItem(`classMap_${profile.id}`);
+      if (saved) setCustomClassMap(JSON.parse(saved));
+    } catch { /* ignore */ }
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    try { localStorage.setItem(`classMap_${profile.id}`, JSON.stringify(customClassMap)); }
+    catch { /* ignore */ }
+  }, [customClassMap, profile?.id]);
+
+  useEffect(() => {
     if (!profile) return;
     const fetchData = async () => {
       try {
