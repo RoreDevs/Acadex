@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { sessionService } from '@/services/sessionService';
 import { attendanceService } from '@/services/attendanceService';
-import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 const codeSchema = z.object({
@@ -79,18 +78,7 @@ export function MarkAttendancePage() {
       }
 
       if (session.class) {
-        let studentClass = '';
-        const { data: classRow } = await supabase
-          .from('student_classes')
-          .select('class')
-          .eq('student_id', profile.id)
-          .eq('program_id', session.program_id)
-          .maybeSingle();
-        if (classRow) {
-          studentClass = classRow.class;
-        } else {
-          studentClass = INITIAL_CLASS_A.includes(profile.index_number || '') ? 'A' : 'B';
-        }
+        const studentClass = INITIAL_CLASS_A.includes(profile.index_number || '') ? 'A' : 'B';
         if (studentClass !== session.class) {
           toast.error(`This code is for Class ${session.class} only. You are in Class ${studentClass}.`);
           setLoading(false);

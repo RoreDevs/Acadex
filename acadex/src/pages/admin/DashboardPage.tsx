@@ -52,20 +52,6 @@ export function AdminDashboardPage() {
   }, [customClassMap, profile?.id]);
 
   useEffect(() => {
-    if (!isBtechCSLevel100 || !profile?.program) return;
-    profileService.getStudentClasses(profile.program).then((rows) => {
-      const dbMap: Record<string, 'A' | 'B'> = {};
-      for (const row of rows) {
-        const student = csStudents.find((s) => s.id === row.student_id);
-        if (student) dbMap[student.index_number] = row.class;
-      }
-      if (Object.keys(dbMap).length > 0) {
-        setCustomClassMap((prev) => ({ ...prev, ...dbMap }));
-      }
-    }).catch(() => {});
-  }, [isBtechCSLevel100, profile?.program, csStudents]);
-
-  useEffect(() => {
     if (!profile) return;
     const fetchData = async () => {
       try {
@@ -108,10 +94,6 @@ export function AdminDashboardPage() {
 
   const moveStudent = (index: string, to: 'A' | 'B') => {
     setCustomClassMap((prev) => ({ ...prev, [index]: to }));
-    const student = csStudents.find((s) => s.index_number === index);
-    if (student && profile?.program) {
-      profileService.setStudentClass(student.id, profile.program, to);
-    }
   };
 
   const currentList = activeTab === 'A' ? classA : classB;

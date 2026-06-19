@@ -10,6 +10,20 @@ function generateAttendanceCode(courseCode: string): string {
   return `${courseCode}-${random}`;
 }
 
+function parseSessionClass(session: any): any {
+  if (!session) return session;
+  if (session.description?.startsWith('__class__:')) {
+    const classVal = session.description[10] as 'A' | 'B';
+    session.class = classVal;
+    session.description = session.description.substring(12) || '';
+  }
+  return session;
+}
+
+function parseSessionsList(data: any[] | null): any[] {
+  return (data || []).map(parseSessionClass);
+}
+
 export const sessionService = {
   async createSession(data: {
     course_id: string;
@@ -39,6 +53,9 @@ export const sessionService = {
     }
 
     const qrCode = `${window.location.origin}/attendance/${attendance_code}`;
+    const description = data.class
+      ? `__class__:${data.class}|${data.description || ''}`
+      : data.description;
 
     const { data: session, error } = await supabase
       .from('sessions')
@@ -46,7 +63,7 @@ export const sessionService = {
         {
           course_id: data.course_id,
           title: data.title,
-          description: data.description,
+          description,
           session_date: data.session_date,
           start_time: data.start_time,
           end_time: data.end_time,
@@ -55,13 +72,13 @@ export const sessionService = {
           is_active: true,
           program_id: data.program_id,
           level: data.level,
-          ...(data.class ? { class: data.class } : {}),
         },
       ])
       .select()
       .single();
 
-    return { data: session as Session | null, error };
+    const parsed = session ? parseSessionClass(session) : null;
+    return { data: parsed as Session | null, error };
   },
 
   async getSessions() {
@@ -69,7 +86,7 @@ export const sessionService = {
       .from('sessions')
       .select('*, courses(title, code)')
       .order('session_date', { ascending: false });
-    return (data || []) as any[];
+    return parseSessionsList(data);
   },
 
   async getUpcomingSessions(limit = 10) {
@@ -81,7 +98,7 @@ export const sessionService = {
       .eq('is_active', true)
       .order('session_date', { ascending: true })
       .limit(limit);
-    return (data || []) as any[];
+    return parseSessionsList(data);
   },
 
   async getSessionsByProgram(program: string, level: string) {
@@ -91,7 +108,7 @@ export const sessionService = {
       .eq('program_id', program)
       .eq('level', level)
       .order('session_date', { ascending: false });
-    return (data || []) as any[];
+    return parseSessionsList(data);
   },
 
   async getSessionById(id: string) {
@@ -100,7 +117,7 @@ export const sessionService = {
       .select('*, courses(title, code)')
       .eq('id', id)
       .single();
-    return data as any;
+    return parseSessionClass(data);
   },
 
   async getSessionByCode(code: string) {
@@ -122,7 +139,7 @@ export const sessionService = {
       }
     }
 
-    return data as any;
+    return parseSessionClass(data);
   },
 
   async updateSession(id: string, updates: Partial<Session>) {
@@ -155,6 +172,6 @@ export const sessionService = {
       .select('*, courses(title, code)')
       .eq('is_active', true)
       .order('session_date', { ascending: false });
-    return (data || []) as any[];
+    return parseSessionsList(data);
   },
 };
