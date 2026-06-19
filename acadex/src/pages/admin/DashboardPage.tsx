@@ -1,12 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, PlayCircle, TrendingUp, BookOpen, QrCode } from 'lucide-react';
+import { Users, Calendar, PlayCircle, TrendingUp, BookOpen, QrCode, Search, ArrowRightLeft } from 'lucide-react';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardService } from '@/services/dashboardService';
+import { profileService } from '@/services/profileService';
 import { useProgramName } from '@/hooks/useProgramName';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import toast from 'react-hot-toast';
+
+const INITIAL_CLASS_A: string[] = [
+  "B202250058",
+];
 
 export function AdminDashboardPage() {
   const { profile } = useAuth();
@@ -20,6 +28,12 @@ export function AdminDashboardPage() {
     total_attendance: 0,
   });
   const [trendData, setTrendData] = useState<{ date: string; count: number }[]>([]);
+  const [csStudents, setCsStudents] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'A' | 'B'>('A');
+  const [customClassMap, setCustomClassMap] = useState<Record<string, 'A' | 'B'>>({});
+  const [search, setSearch] = useState('');
+
+  const isBtechCSLevel100 = programName === 'BTECH COMPUTER SCIENCE' && profile?.level === 'Level 100';
 
   useEffect(() => {
     if (!profile) return;
@@ -38,11 +52,54 @@ export function AdminDashboardPage() {
     fetchData();
   }, [profile]);
 
+  useEffect(() => {
+    if (!isBtechCSLevel100 || !profile?.program || !profile?.level) return;
+    profileService.getStudentsByProgram(profile.program, profile.level)
+      .then(setCsStudents)
+      .catch(() => toast.error('Failed to load students'));
+  }, [isBtechCSLevel100, profile?.program, profile?.level]);
+
+  const { classA, classB } = useMemo(() => {
+    if (!isBtechCSLevel100) return { classA: [] as any[], classB: [] as any[] };
+    const a: any[] = [];
+    const b: any[] = [];
+    for (const s of csStudents) {
+      const override = customClassMap[s.index_number];
+      if (override) {
+        (override === 'A' ? a : b).push(s);
+      } else if (INITIAL_CLASS_A.includes(s.index_number)) {
+        a.push(s);
+      } else {
+        b.push(s);
+      }
+    }
+    return { classA: a, classB: b };
+  }, [csStudents, customClassMap, isBtechCSLevel100]);
+
+  const moveStudent = (index: string, to: 'A' | 'B') => {
+    setCustomClassMap((prev) => ({ ...prev, [index]: to }));
+  };
+
+  const currentList = activeTab === 'A' ? classA : classB;
+
+  const filtered = currentList.filter((s) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      s.full_name?.toLowerCase().includes(q) ||
+      s.index_number?.toLowerCase().includes(q) ||
+      s.email?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">{programName} - {profile?.level}</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
+          {programName} - {profile?.level}
+          {isBtechCSLevel100 && ` • Class ${activeTab} (${currentList.length} students)`}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -101,6 +158,99 @@ export function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {isBtechCSLevel100 && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={activeTab === 'A' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('A')}
+              >
+                Class A ({classA.length})
+              </Button>
+              <Button
+                variant={activeTab === 'B' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('B')}
+              >
+                Class B ({classB.length})
+              </Button>
+            </div>
+
+            <div className="mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                Active Class Functions ({activeTab})
+              </p>
+              <Button
+                size="sm"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => toast.success(`Attendance code generated for Class ${activeTab}`)}
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                Generate Attendance Code for Class {activeTab}
+              </Button>
+            </div>
+
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search by name, index, or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                <Users className="w-12 h-12 mb-4 text-gray-300 dark:text-gray-600" />
+                <p>{search ? 'No students match your search.' : `No students in Class ${activeTab}.`}</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Name</th>
+                      <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Index Number</th>
+                      <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Email</th>
+                      <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Level</th>
+                      <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((s) => (
+                      <tr key={s.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td className="py-3 px-2 font-medium text-gray-900 dark:text-gray-100">{s.full_name}</td>
+                        <td className="py-3 px-2 text-gray-600 dark:text-gray-400">{s.index_number}</td>
+                        <td className="py-3 px-2 text-gray-600 dark:text-gray-400">{s.email}</td>
+                        <td className="py-3 px-2 text-gray-600 dark:text-gray-400">{s.level}</td>
+                        <td className="py-3 px-2 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveStudent(s.index_number, activeTab === 'A' ? 'B' : 'A')}
+                            className={
+                              activeTab === 'A'
+                                ? 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100'
+                                : 'bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100'
+                            }
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+                            Move to {activeTab === 'A' ? 'B' : 'A'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </motion.div>
   );
 }
