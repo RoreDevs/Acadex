@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Calendar, PlayCircle, TrendingUp, BookOpen, QrCode, Search, ArrowRightLeft } from 'lucide-react';
 import { StatsCard } from '@/components/shared/StatsCard';
@@ -18,6 +19,7 @@ const INITIAL_CLASS_A: string[] = [
 
 export function AdminDashboardPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const programName = useProgramName(profile?.program);
   const [stats, setStats] = useState({
     total_students: 0,
@@ -48,6 +50,20 @@ export function AdminDashboardPage() {
     try { localStorage.setItem(`classMap_${profile.id}`, JSON.stringify(customClassMap)); }
     catch { /* ignore */ }
   }, [customClassMap, profile?.id]);
+
+  useEffect(() => {
+    if (!isBtechCSLevel100 || !profile?.program) return;
+    profileService.getStudentClasses(profile.program).then((rows) => {
+      const dbMap: Record<string, 'A' | 'B'> = {};
+      for (const row of rows) {
+        const student = csStudents.find((s) => s.id === row.student_id);
+        if (student) dbMap[student.index_number] = row.class;
+      }
+      if (Object.keys(dbMap).length > 0) {
+        setCustomClassMap((prev) => ({ ...prev, ...dbMap }));
+      }
+    }).catch(() => {});
+  }, [isBtechCSLevel100, profile?.program, csStudents]);
 
   useEffect(() => {
     if (!profile) return;
@@ -92,6 +108,10 @@ export function AdminDashboardPage() {
 
   const moveStudent = (index: string, to: 'A' | 'B') => {
     setCustomClassMap((prev) => ({ ...prev, [index]: to }));
+    const student = csStudents.find((s) => s.index_number === index);
+    if (student && profile?.program) {
+      profileService.setStudentClass(student.id, profile.program, to);
+    }
   };
 
   const currentList = activeTab === 'A' ? classA : classB;
@@ -200,7 +220,7 @@ export function AdminDashboardPage() {
               <Button
                 size="sm"
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => toast.success(`Attendance code generated for Class ${activeTab}`)}
+                onClick={() => navigate(`/admin/generate-session?class=${activeTab}`)}
               >
                 <QrCode className="w-4 h-4 mr-2" />
                 Generate Attendance Code for Class {activeTab}

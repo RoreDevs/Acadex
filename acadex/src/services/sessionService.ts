@@ -21,6 +21,7 @@ export const sessionService = {
     program_id: string;
     level: string;
     course_code: string;
+    class?: 'A' | 'B';
   }) {
     let attendance_code = generateAttendanceCode(data.course_code);
     let isUnique = false;
@@ -54,6 +55,7 @@ export const sessionService = {
           is_active: true,
           program_id: data.program_id,
           level: data.level,
+          ...(data.class ? { class: data.class } : {}),
         },
       ])
       .select()

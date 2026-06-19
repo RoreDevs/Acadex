@@ -46,6 +46,7 @@ export interface Session {
   created_at: string;
   program_id: string;
   level: string;
+  class?: 'A' | 'B';
 }
 
 export interface Attendance {

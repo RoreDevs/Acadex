@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { sessionService } from '@/services/sessionService';
 import { attendanceService } from '@/services/attendanceService';
+import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 const codeSchema = z.object({
@@ -19,6 +20,10 @@ const codeSchema = z.object({
 });
 
 type CodeForm = z.infer<typeof codeSchema>;
+
+const INITIAL_CLASS_A: string[] = [
+  "B202250058",
+];
 
 export function MarkAttendancePage() {
   const { profile } = useAuth();
@@ -71,6 +76,26 @@ export function MarkAttendancePage() {
         toast.error('Session has ended.');
         setLoading(false);
         return;
+      }
+
+      if (session.class) {
+        let studentClass = '';
+        const { data: classRow } = await supabase
+          .from('student_classes')
+          .select('class')
+          .eq('student_id', profile.id)
+          .eq('program_id', session.program_id)
+          .maybeSingle();
+        if (classRow) {
+          studentClass = classRow.class;
+        } else {
+          studentClass = INITIAL_CLASS_A.includes(profile.index_number || '') ? 'A' : 'B';
+        }
+        if (studentClass !== session.class) {
+          toast.error(`This code is for Class ${session.class} only. You are in Class ${studentClass}.`);
+          setLoading(false);
+          return;
+        }
       }
 
       const alreadyAttended = await attendanceService.checkAttendance(session.id, profile.id);

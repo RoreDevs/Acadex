@@ -90,4 +90,22 @@ export const profileService = {
       .limit(20);
     return (data || []) as UserProfile[];
   },
+
+  async getStudentClasses(programId: string) {
+    const { data } = await supabase
+      .from('student_classes')
+      .select('*')
+      .eq('program_id', programId);
+    return (data || []) as { student_id: string; class: 'A' | 'B' }[];
+  },
+
+  async setStudentClass(studentId: string, programId: string, studentClass: 'A' | 'B') {
+    const { error } = await supabase
+      .from('student_classes')
+      .upsert(
+        { student_id: studentId, program_id: programId, class: studentClass, updated_at: new Date().toISOString() },
+        { onConflict: 'student_id, program_id' }
+      );
+    return { error };
+  },
 };
