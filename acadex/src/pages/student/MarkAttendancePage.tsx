@@ -20,10 +20,6 @@ const codeSchema = z.object({
 
 type CodeForm = z.infer<typeof codeSchema>;
 
-const INITIAL_CLASS_A: string[] = [
-  "B202250058",
-];
-
 export function MarkAttendancePage() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -75,15 +71,6 @@ export function MarkAttendancePage() {
         toast.error('Session has ended.');
         setLoading(false);
         return;
-      }
-
-      if (session.class) {
-        const studentClass = INITIAL_CLASS_A.includes(profile.index_number || '') ? 'A' : 'B';
-        if (studentClass !== session.class) {
-          toast.error(`This code is for Class ${session.class} only. You are in Class ${studentClass}.`);
-          setLoading(false);
-          return;
-        }
       }
 
       const alreadyAttended = await attendanceService.checkAttendance(session.id, profile.id);

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { QrCode, FileText, Users } from 'lucide-react';
+import { QrCode, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgramName } from '@/hooks/useProgramName';
 import { courseService } from '@/services/courseService';
 import { sessionService } from '@/services/sessionService';
 import toast from 'react-hot-toast';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const sessionSchema = z.object({
   course_id: z.string().min(1, 'Please select a course'),
@@ -30,17 +29,9 @@ type SessionForm = z.infer<typeof sessionSchema>;
 
 export function GenerateSessionPage() {
   const { profile } = useAuth();
-  const programName = useProgramName(profile?.program);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedClass, setSelectedClass] = useState<'A' | 'B'>(() => {
-    const fromUrl = searchParams.get('class');
-    return fromUrl === 'A' || fromUrl === 'B' ? fromUrl : 'A';
-  });
-
-  const isBtechCSLevel100 = programName === 'BTECH COMPUTER SCIENCE' && profile?.level === 'Level 100';
 
   useEffect(() => {
     if (!profile) return;
@@ -77,14 +68,13 @@ export function GenerateSessionPage() {
       program_id: profile.program!,
       level: profile.level!,
       course_code: course.code,
-      ...(isBtechCSLevel100 ? { class: selectedClass } : {}),
     });
 
     setLoading(false);
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success(`Session created for Class ${selectedClass}!`);
+      toast.success('Session created successfully!');
       navigate('/admin/sessions');
     }
   };
@@ -120,21 +110,6 @@ export function GenerateSessionPage() {
                 <p className="mt-1.5 text-xs text-red-500">{errors.course_id.message}</p>
               )}
             </div>
-
-            {isBtechCSLevel100 && (
-              <div className="space-y-2">
-                <Label>Class</Label>
-                <Select value={selectedClass} onValueChange={(v) => setSelectedClass(v as 'A' | 'B')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">Class A</SelectItem>
-                    <SelectItem value="B">Class B</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="title">Session Title</Label>
