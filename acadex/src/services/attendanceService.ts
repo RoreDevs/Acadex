@@ -210,6 +210,16 @@ export const attendanceService = {
       'Attendance Summary': `${attendanceCount[sid] || 0}/${totalSessions}`,
     }));
 
+    if (report.length === 0) {
+      report.push({
+        'Full Name': 'No students have marked attendance yet',
+        'Index Number': '-',
+        'Sessions Attended': 0,
+        'Total Sessions': totalSessions,
+        'Attendance Summary': `0/${totalSessions}`,
+      });
+    }
+
     return report;
   },
 };
