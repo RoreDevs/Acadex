@@ -159,7 +159,9 @@ export const attendanceService = {
   },
 
   async getAttendanceReportByCourse(courseId: string) {
-    const fetchData = async () => {
+    const fetchData = async (retrying = false) => {
+      if (retrying) await fixBrokenRLS();
+
       const [enrollRes, sessRes] = await Promise.all([
         supabase
           .from('enrollments')
@@ -171,26 +173,35 @@ export const attendanceService = {
           .eq('course_id', courseId),
       ]);
 
+      if (enrollRes.error) console.error('enrollments error:', enrollRes.error);
+      if (sessRes.error) console.error('sessions error:', sessRes.error);
+
+      const enrollments = enrollRes.data || [];
       const sessions = sessRes.data || [];
       const sessionIds = sessions.map((s: any) => s.id);
 
-      let attData: any[] | null = [];
+      let attData: any[] = [];
       if (sessionIds.length > 0) {
-        const { data } = await supabase
+        const attRes = await supabase
           .from('attendance')
           .select('student_id')
           .in('session_id', sessionIds);
-        attData = data;
+        if (attRes.error) console.error('attendance error:', attRes.error);
+        attData = attRes.data || [];
       }
 
-      return { enrollments: enrollRes.data || [], sessions, attendanceRecords: attData || [] };
+      return { enrollments, sessions, attendanceRecords: attData };
     };
 
-    let { enrollments, sessions, attendanceRecords } = await fetchData();
+    let { enrollments, sessions, attendanceRecords } = await fetchData(false);
 
-    if ((!enrollments || enrollments.length === 0) || !sessions.length) {
-      await fixBrokenRLS();
-      const retry = await fetchData();
+    const needsRetry =
+      enrollments.length === 0 ||
+      sessions.length === 0 ||
+      (sessions.length > 0 && attendanceRecords.length === 0);
+
+    if (needsRetry) {
+      const retry = await fetchData(true);
       enrollments = retry.enrollments;
       sessions = retry.sessions;
       attendanceRecords = retry.attendanceRecords;

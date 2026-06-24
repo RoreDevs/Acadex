@@ -60,13 +60,19 @@ export function AttendanceTrackingPage() {
       const courseData = courses.find(c => c.id === selectedCourse);
       const filename = `attendance-${courseData?.code || 'report'}`;
 
+      if (report.length === 0) {
+        toast.error('No attendance data found for this course. Ensure students are enrolled and sessions exist.');
+        setReportLoading(false);
+        return;
+      }
+
       if (format === 'csv') {
         exportToCSV(report, filename);
       } else if (format === 'excel') {
         exportToExcel(report, filename);
       } else if (format === 'pdf') {
         const columns = ['Full Name', 'Index Number', 'Sessions Attended', 'Total Sessions', 'Attendance Summary'];
-        exportToPDF(report, filename, `Attendance Report - ${courseData?.title}`, columns);
+        exportToPDF(report, filename, `Attendance Report - ${courseData?.title || filename}`, columns);
       }
 
       toast.success(`Attendance report exported as ${format.toUpperCase()}`);
