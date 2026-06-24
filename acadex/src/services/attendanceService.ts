@@ -159,68 +159,67 @@ export const attendanceService = {
   },
 
   async getAttendanceReportByCourse(courseId: string) {
-    const fetchData = async (retrying = false) => {
-      if (retrying) await fixBrokenRLS();
+    const sessionsRes = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('course_id', courseId);
 
-      const [enrollRes, sessRes] = await Promise.all([
-        supabase
-          .from('enrollments')
-          .select('student_id, profiles!inner(full_name, index_number)')
-          .eq('course_id', courseId),
-        supabase
-          .from('sessions')
-          .select('id')
-          .eq('course_id', courseId),
-      ]);
+    if (sessionsRes.error) console.error('sessions error:', sessionsRes.error);
 
-      if (enrollRes.error) console.error('enrollments error:', enrollRes.error);
-      if (sessRes.error) console.error('sessions error:', sessRes.error);
+    const sessionIds = sessionsRes.data?.map((s: any) => s.id) || [];
+    const totalSessions = sessionIds.length;
 
-      const enrollments = enrollRes.data || [];
-      const sessions = sessRes.data || [];
-      const sessionIds = sessions.map((s: any) => s.id);
+    const enrollRes = await supabase
+      .from('enrollments')
+      .select('student_id')
+      .eq('course_id', courseId);
 
-      let attData: any[] = [];
-      if (sessionIds.length > 0) {
-        const attRes = await supabase
-          .from('attendance')
-          .select('student_id')
-          .in('session_id', sessionIds);
-        if (attRes.error) console.error('attendance error:', attRes.error);
-        attData = attRes.data || [];
-      }
+    if (enrollRes.error) console.error('enrollments error:', enrollRes.error);
 
-      return { enrollments, sessions, attendanceRecords: attData };
-    };
+    const enrollments: { student_id: string }[] = enrollRes.data || [];
 
-    let { enrollments, sessions, attendanceRecords } = await fetchData(false);
-
-    const needsRetry =
-      enrollments.length === 0 ||
-      sessions.length === 0 ||
-      (sessions.length > 0 && attendanceRecords.length === 0);
-
-    if (needsRetry) {
-      const retry = await fetchData(true);
-      enrollments = retry.enrollments;
-      sessions = retry.sessions;
-      attendanceRecords = retry.attendanceRecords;
+    let attendanceRecords: { student_id: string }[] = [];
+    if (totalSessions > 0) {
+      const attRes = await supabase
+        .from('attendance')
+        .select('student_id')
+        .in('session_id', sessionIds);
+      if (attRes.error) console.error('attendance error:', attRes.error);
+      attendanceRecords = attRes.data || [];
     }
 
-    const totalSessions = sessions.length;
+    const studentIds = enrollments.map((e) => e.student_id);
+
+    let profilesData: any[] = [];
+    if (studentIds.length > 0) {
+      const profRes = await supabase
+        .from('profiles')
+        .select('id, full_name, index_number')
+        .in('id', studentIds);
+      if (profRes.error) console.error('profiles error:', profRes.error);
+      profilesData = profRes.data || [];
+    }
+
+    const profileMap: Record<string, any> = {};
+    profilesData.forEach((p: any) => {
+      profileMap[p.id] = p;
+    });
 
     const attendanceCount: Record<string, number> = {};
     attendanceRecords.forEach((record: any) => {
       attendanceCount[record.student_id] = (attendanceCount[record.student_id] || 0) + 1;
     });
 
-    const report = enrollments.map((enrollment: any) => ({
-      'Full Name': enrollment.profiles?.full_name || 'N/A',
-      'Index Number': enrollment.profiles?.index_number || 'N/A',
-      'Sessions Attended': attendanceCount[enrollment.student_id] || 0,
-      'Total Sessions': totalSessions,
-      'Attendance Summary': `${attendanceCount[enrollment.student_id] || 0}/${totalSessions}`,
-    }));
+    const report = enrollments.map((enrollment: any) => {
+      const profile = profileMap[enrollment.student_id];
+      return {
+        'Full Name': profile?.full_name || 'N/A',
+        'Index Number': profile?.index_number || 'N/A',
+        'Sessions Attended': attendanceCount[enrollment.student_id] || 0,
+        'Total Sessions': totalSessions,
+        'Attendance Summary': `${attendanceCount[enrollment.student_id] || 0}/${totalSessions}`,
+      };
+    });
 
     return report;
   },
