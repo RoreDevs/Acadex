@@ -1,23 +1,53 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Download } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, Clock, User, Download, Settings, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { attendanceService } from '@/services/attendanceService';
+import { settingsService } from '@/services/settingsService';
 import { exportToCSV, exportToExcel } from '@/utils/export';
+import { DEFAULT_ATTENDANCE_RADIUS_METERS } from '@/lib/config';
 import toast from 'react-hot-toast';
 
 export function AttendancePage() {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [radiusMeters, setRadiusMeters] = useState(DEFAULT_ATTENDANCE_RADIUS_METERS);
+  const [radiusInput, setRadiusInput] = useState(String(DEFAULT_ATTENDANCE_RADIUS_METERS));
+  const [savingRadius, setSavingRadius] = useState(false);
 
   useEffect(() => {
     attendanceService.getAllAttendanceRecords()
       .then(setRecords)
       .catch(() => toast.error('Failed to load attendance records'))
       .finally(() => setLoading(false));
+    settingsService.getSetting('attendance_radius_meters').then((v) => {
+      if (v) {
+        setRadiusMeters(Number(v));
+        setRadiusInput(v);
+      }
+    });
   }, []);
+
+  const handleSaveRadius = async () => {
+    const val = Number(radiusInput);
+    if (isNaN(val) || val < 10) {
+      toast.error('Radius must be at least 10 meters.');
+      return;
+    }
+    setSavingRadius(true);
+    const { error } = await settingsService.updateSetting('attendance_radius_meters', String(Math.round(val)));
+    setSavingRadius(false);
+    if (error) {
+      toast.error('Failed to save radius setting.');
+    } else {
+      setRadiusMeters(Math.round(val));
+      toast.success(`Attendance radius updated to ${Math.round(val)} meters.`);
+    }
+  };
 
   const columns = [
     {
@@ -107,6 +137,43 @@ export function AttendancePage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Settings className="w-4 h-4" />
+            Attendance Location Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
+            <div className="space-y-1.5 flex-1 max-w-xs">
+              <Label htmlFor="radius" className="text-xs text-gray-500">
+                <MapPin className="w-3.5 h-3.5 inline mr-1" />
+                Allowed Radius (meters)
+              </Label>
+              <Input
+                id="radius"
+                type="number"
+                min={10}
+                value={radiusInput}
+                onChange={(e) => setRadiusInput(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveRadius}
+              disabled={savingRadius || radiusInput === String(radiusMeters)}
+            >
+              {savingRadius ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Students must be within this distance from the classroom GPS coordinates to mark attendance. Default: {DEFAULT_ATTENDANCE_RADIUS_METERS}m. Current: {radiusMeters}m.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-6">

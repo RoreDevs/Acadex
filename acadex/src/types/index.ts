@@ -46,6 +46,8 @@ export interface Session {
   created_at: string;
   program_id: string;
   level: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Attendance {
@@ -54,6 +56,21 @@ export interface Attendance {
   session_id: string;
   timestamp: string;
   status: 'present' | 'absent' | 'late';
+  student_latitude?: number;
+  student_longitude?: number;
+  location_verified?: boolean;
+}
+
+export interface Setting {
+  key: string;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LocationCoords {
+  latitude: number;
+  longitude: number;
 }
 
 export interface Notification {

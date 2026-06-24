@@ -21,6 +21,8 @@ export const sessionService = {
     program_id: string;
     level: string;
     course_code: string;
+    latitude?: number;
+    longitude?: number;
   }) {
     let attendance_code = generateAttendanceCode(data.course_code);
     let isUnique = false;
@@ -54,6 +56,8 @@ export const sessionService = {
           is_active: true,
           program_id: data.program_id,
           level: data.level,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
         },
       ])
       .select()

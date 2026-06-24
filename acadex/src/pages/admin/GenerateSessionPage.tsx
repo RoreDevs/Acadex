@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { QrCode, FileText } from 'lucide-react';
+import { QrCode, FileText, MapPin, Crosshair } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,11 +32,45 @@ export function GenerateSessionPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [capturingLocation, setCapturingLocation] = useState(false);
+  const [classroomLocation, setClassroomLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     if (!profile) return;
     courseService.getCoursesByProgram(profile.program!, profile.level!).then(setCourses);
   }, [profile]);
+
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.');
+      return;
+    }
+    setCapturingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setClassroomLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setCapturingLocation(false);
+        toast.success('Classroom location captured.');
+      },
+      (err) => {
+        setCapturingLocation(false);
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            toast.error('Location permission denied. Please enable location services to set the classroom location.');
+            break;
+          case err.POSITION_UNAVAILABLE:
+            toast.error('Location unavailable. Please try again.');
+            break;
+          default:
+            toast.error('Failed to capture location. Please try again.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
 
   const {
     register,
@@ -68,6 +102,8 @@ export function GenerateSessionPage() {
       program_id: profile.program!,
       level: profile.level!,
       course_code: course.code,
+      latitude: classroomLocation?.latitude,
+      longitude: classroomLocation?.longitude,
     });
 
     setLoading(false);
@@ -135,6 +171,41 @@ export function GenerateSessionPage() {
                 <Label htmlFor="end_time">End Time</Label>
                 <Input id="end_time" type="time" {...register('end_time')} error={errors.end_time?.message} />
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Classroom Location (Optional)</Label>
+              <div className="flex items-start gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={captureLocation}
+                  disabled={capturingLocation}
+                  className="shrink-0"
+                >
+                  {capturingLocation ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                      Capturing...
+                    </div>
+                  ) : (
+                    <>
+                      <Crosshair className="w-4 h-4 mr-2" />
+                      {classroomLocation ? 'Recapture' : 'Capture Current Location'}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {classroomLocation && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                  <MapPin className="w-4 h-4 text-primary-500 shrink-0" />
+                  <span>
+                    {classroomLocation.latitude.toFixed(6)}, {classroomLocation.longitude.toFixed(6)}
+                  </span>
+                  <span className="text-xs text-gray-400 ml-auto">Classroom coordinates</span>
+                </div>
+              )}
+              <p className="text-xs text-gray-400">Capture your current location so students can verify they are in the classroom when marking attendance.</p>
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
