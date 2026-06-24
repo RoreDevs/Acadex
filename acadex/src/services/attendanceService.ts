@@ -159,48 +159,57 @@ export const attendanceService = {
   },
 
   async getAttendanceReportByCourse(courseId: string) {
-    // Get all enrolled students for the course
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('student_id, profiles(id, full_name, index_number)')
-      .eq('course_id', courseId);
+    const fetchData = async () => {
+      const [enrollRes, sessRes] = await Promise.all([
+        supabase
+          .from('enrollments')
+          .select('student_id, profiles(id, full_name, index_number)')
+          .eq('course_id', courseId),
+        supabase
+          .from('sessions')
+          .select('id')
+          .eq('course_id', courseId),
+      ]);
 
-    // Get total sessions for the course
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select('id')
-      .eq('course_id', courseId);
+      const sessions = sessRes.data || [];
+      const sessionIds = sessions.map((s: any) => s.id);
 
-    const totalSessions = sessions?.length || 0;
-    const studentIds = enrollments?.map(e => e.student_id) || [];
+      let attData: any[] | null = [];
+      if (sessionIds.length > 0) {
+        const { data } = await supabase
+          .from('attendance')
+          .select('student_id')
+          .in('session_id', sessionIds);
+        attData = data;
+      }
 
-    // Get attendance records for these students in this course's sessions
-    const sessionIds = sessions?.map(s => s.id) || [];
-    
-    let attendanceQuery = supabase
-      .from('attendance')
-      .select('student_id');
+      return { enrollments: enrollRes.data || [], sessions, attendanceRecords: attData || [] };
+    };
 
-    if (sessionIds.length > 0) {
-      attendanceQuery = attendanceQuery.in('session_id', sessionIds);
+    let { enrollments, sessions, attendanceRecords } = await fetchData();
+
+    if ((!enrollments || enrollments.length === 0) || !sessions.length) {
+      await fixBrokenRLS();
+      const retry = await fetchData();
+      enrollments = retry.enrollments;
+      sessions = retry.sessions;
+      attendanceRecords = retry.attendanceRecords;
     }
 
-    const { data: attendanceRecords } = await attendanceQuery;
+    const totalSessions = sessions.length;
 
-    // Count attendance per student
     const attendanceCount: Record<string, number> = {};
-    attendanceRecords?.forEach((record: any) => {
+    attendanceRecords.forEach((record: any) => {
       attendanceCount[record.student_id] = (attendanceCount[record.student_id] || 0) + 1;
     });
 
-    // Build report
-    const report = enrollments?.map((enrollment: any) => ({
+    const report = enrollments.map((enrollment: any) => ({
       'Full Name': enrollment.profiles?.full_name || 'N/A',
       'Index Number': enrollment.profiles?.index_number || 'N/A',
       'Sessions Attended': attendanceCount[enrollment.student_id] || 0,
       'Total Sessions': totalSessions,
       'Attendance Summary': `${attendanceCount[enrollment.student_id] || 0}/${totalSessions}`,
-    })) || [];
+    }));
 
     return report;
   },
