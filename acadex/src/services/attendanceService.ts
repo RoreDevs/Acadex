@@ -159,57 +159,55 @@ export const attendanceService = {
   },
 
   async getAttendanceReportByCourse(courseId: string) {
-    const fetchWithRetry = async (retry = false) => {
+    const getData = async (retry = false) => {
       if (retry) await fixBrokenRLS();
 
-      const sessionsRes = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('course_id', courseId);
-
+      const sessionsRes = await supabase.from('sessions').select('id').eq('course_id', courseId);
       const sessionIds = sessionsRes.data?.map((s: any) => s.id) || [];
-      const totalSessions = sessionIds.length;
 
-      let attData: any[] = [];
+      let attRecords: any[] = [];
       if (sessionIds.length > 0) {
-        const attRes = await supabase
-          .from('attendance')
-          .select('*, profiles!inner(full_name, index_number)')
-          .in('session_id', sessionIds);
-        attData = attRes.data || [];
+        const attRes = await supabase.from('attendance').select('student_id').in('session_id', sessionIds);
+        attRecords = attRes.data || [];
       }
 
-      return { sessionIds, totalSessions, attData };
+      return { sessionIds, attRecords };
     };
 
-    let { sessionIds, totalSessions, attData } = await fetchWithRetry(false);
-
-    if (totalSessions === 0 && sessionIds.length === 0) {
-      const retry = await fetchWithRetry(true);
+    let { sessionIds, attRecords } = await getData(false);
+    const needsRetry = sessionIds.length === 0 || (sessionIds.length > 0 && attRecords.length === 0);
+    if (needsRetry) {
+      const retry = await getData(true);
       sessionIds = retry.sessionIds;
-      totalSessions = retry.totalSessions;
-      attData = retry.attData;
+      attRecords = retry.attRecords;
     }
 
-    const studentMap: Record<string, { full_name: string; index_number: string; count: number }> = {};
-    for (const record of attData) {
-      const sid = record.student_id;
-      if (!studentMap[sid]) {
-        studentMap[sid] = {
-          full_name: record.profiles?.full_name || 'N/A',
-          index_number: record.profiles?.index_number || 'N/A',
-          count: 0,
-        };
-      }
-      studentMap[sid].count++;
+    const totalSessions = sessionIds.length;
+    const studentIds = [...new Set(attRecords.map((r: any) => r.student_id))];
+
+    let profilesData: any[] = [];
+    if (studentIds.length > 0) {
+      const profRes = await supabase
+        .from('profiles')
+        .select('id, full_name, index_number')
+        .in('id', studentIds);
+      profilesData = profRes.data || [];
     }
 
-    const report = Object.values(studentMap).map((s) => ({
-      'Full Name': s.full_name,
-      'Index Number': s.index_number,
-      'Sessions Attended': s.count,
+    const profileMap: Record<string, any> = {};
+    for (const p of profilesData) profileMap[p.id] = p;
+
+    const attendanceCount: Record<string, number> = {};
+    for (const rec of attRecords) {
+      attendanceCount[rec.student_id] = (attendanceCount[rec.student_id] || 0) + 1;
+    }
+
+    const report = studentIds.map((sid) => ({
+      'Full Name': profileMap[sid]?.full_name || 'N/A',
+      'Index Number': profileMap[sid]?.index_number || 'N/A',
+      'Sessions Attended': attendanceCount[sid] || 0,
       'Total Sessions': totalSessions,
-      'Attendance Summary': `${s.count}/${totalSessions}`,
+      'Attendance Summary': `${attendanceCount[sid] || 0}/${totalSessions}`,
     }));
 
     return report;
