@@ -54,14 +54,14 @@ export const attendanceService = {
   async getAttendanceBySession(sessionId: string) {
     let { data, error } = await supabase
       .from('attendance')
-      .select('*, profiles(full_name, index_number)')
+      .select('*, profiles!inner(full_name, index_number)')
       .eq('session_id', sessionId)
       .order('timestamp');
     if (error) {
       await fixBrokenRLS();
       const retry = await supabase
         .from('attendance')
-        .select('*, profiles(full_name, index_number)')
+        .select('*, profiles!inner(full_name, index_number)')
         .eq('session_id', sessionId)
         .order('timestamp');
       data = retry.data;
@@ -119,13 +119,13 @@ export const attendanceService = {
   async getAllAttendanceRecords() {
     let { data, error } = await supabase
       .from('attendance')
-      .select('*, sessions(title, session_date, courses(title, code)), profiles(full_name, index_number)')
+      .select('*, sessions(title, session_date, courses(title, code)), profiles!inner(full_name, index_number)')
       .order('timestamp', { ascending: false });
     if (error) {
       await fixBrokenRLS();
       const retry = await supabase
         .from('attendance')
-        .select('*, sessions(title, session_date, courses(title, code)), profiles(full_name, index_number)')
+        .select('*, sessions(title, session_date, courses(title, code)), profiles!inner(full_name, index_number)')
         .order('timestamp', { ascending: false });
       data = retry.data;
     }
@@ -165,7 +165,7 @@ export const attendanceService = {
       const [enrollRes, sessRes] = await Promise.all([
         supabase
           .from('enrollments')
-          .select('student_id, profiles(id, full_name, index_number)')
+          .select('student_id, profiles!inner(full_name, index_number)')
           .eq('course_id', courseId),
         supabase
           .from('sessions')
