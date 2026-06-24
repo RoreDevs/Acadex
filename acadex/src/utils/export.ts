@@ -20,8 +20,12 @@ export function exportToCSV(data: Record<string, any>[], filename: string) {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `${filename}.csv`;
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(link.href);
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  }, 100);
 }
 
 export function exportToExcel(data: Record<string, any>[], filename: string) {

@@ -61,7 +61,9 @@ export function AttendanceTrackingPage() {
       const filename = `attendance-${courseData?.code || 'report'}`;
 
       if (report.length === 0) {
-        toast.error('No attendance data found for this course. Ensure students are enrolled and sessions exist.');
+        const courseDetail = courseData ? `${courseData.code} - ${courseData.title}` : selectedCourse;
+        const sessionsForCourse = sessions.filter(s => s.course_id === selectedCourse);
+        toast.error(`No attendance records found for "${courseDetail}". This course has ${sessionsForCourse.length} session(s). Students may not have marked attendance yet.`);
         setReportLoading(false);
         return;
       }
@@ -75,7 +77,7 @@ export function AttendanceTrackingPage() {
         exportToPDF(report, filename, `Attendance Report - ${courseData?.title || filename}`, columns);
       }
 
-      toast.success(`Attendance report exported as ${format.toUpperCase()}`);
+      toast.success(`Attendance report exported as ${format.toUpperCase()} (${report.length} students)`);
     } catch (error) {
       toast.error(`Failed to export report as ${format.toUpperCase()}`);
       console.error(error);
