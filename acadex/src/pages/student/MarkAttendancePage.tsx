@@ -22,7 +22,7 @@ const codeSchema = z.object({
 
 type CodeForm = z.infer<typeof codeSchema>;
 
-type LocationStatus = 'idle' | 'checking' | 'verified' | 'denied' | 'outside_radius' | 'unsupported';
+type LocationStatus = 'idle' | 'checking' | 'denied' | 'outside_radius' | 'unsupported';
 
 function haversineDistance(
   lat1: number, lng1: number,
@@ -44,7 +44,6 @@ export function MarkAttendancePage() {
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [studentCoords, setStudentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const {
     register,
@@ -55,12 +54,15 @@ export function MarkAttendancePage() {
     resolver: zodResolver(codeSchema),
   });
 
-  const checkLocation = (session: any, radiusMeters: number): Promise<boolean> => {
+  const checkLocation = (
+    session: any,
+    radiusMeters: number
+  ): Promise<{ ok: boolean; coords?: { latitude: number; longitude: number } }> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         setLocationStatus('unsupported');
         setErrorMessage('Your browser does not support geolocation or location is unavailable.');
-        resolve(false);
+        resolve({ ok: false });
         return;
       }
       setLocationStatus('checking');
@@ -71,33 +73,27 @@ export function MarkAttendancePage() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
-          setStudentCoords(coords);
           const distance = haversineDistance(
             coords.latitude, coords.longitude,
             session.latitude, session.longitude
           );
           if (distance <= radiusMeters) {
-            setLocationStatus('verified');
-            setErrorMessage('');
-            resolve(true);
+            resolve({ ok: true, coords });
           } else {
             setLocationStatus('outside_radius');
-            const distMsg = distance >= 1000
-              ? `${(distance / 1000).toFixed(1)} km`
-              : `${Math.round(distance)} m`;
-            setErrorMessage(`You are ${distMsg} away from the classroom. You must be within ${radiusMeters}m to mark attendance.`);
-            resolve(false);
+            setErrorMessage('You must be within the classroom area to mark attendance.');
+            resolve({ ok: false });
           }
         },
         (err) => {
           if (err.code === err.PERMISSION_DENIED) {
             setLocationStatus('denied');
-            setErrorMessage('Please enable location services and grant browser permission to mark attendance.');
+            setErrorMessage('Grant Location Access before you can sign Attendance');
           } else {
             setLocationStatus('unsupported');
             setErrorMessage('Unable to determine your location. Please try again.');
           }
-          resolve(false);
+          resolve({ ok: false });
         },
         { enableHighAccuracy: true, timeout: 10000 },
       );
@@ -111,7 +107,6 @@ export function MarkAttendancePage() {
     setSessionInfo(null);
     setLocationStatus('idle');
     setErrorMessage('');
-    setStudentCoords(null);
 
     try {
       const session = await sessionService.getSessionByCode(data.code.toUpperCase());
@@ -157,12 +152,43 @@ export function MarkAttendancePage() {
       if (session.latitude != null && session.longitude != null) {
         const radiusSetting = await settingsService.getSetting('attendance_radius_meters');
         const radius = radiusSetting ? Number(radiusSetting) : DEFAULT_ATTENDANCE_RADIUS_METERS;
-        setLocationStatus('checking');
         setLoading(false);
-        const locationOk = await checkLocation(session, radius);
-        if (!locationOk) {
+        const { ok, coords } = await checkLocation(session, radius);
+        if (!ok || !coords) {
           return;
         }
+        setLoading(true);
+        const { result, error } = await attendanceService.verifyAndMarkAttendance(
+          profile.id,
+          session.id,
+          coords,
+        );
+        if (error) {
+          toast.error(error.message);
+          setSessionInfo(null);
+          setLocationStatus('idle');
+          setLoading(false);
+          return;
+        }
+        if (!result?.success) {
+          if (result?.error === 'DUPLICATE') {
+            toast.error(result.message || 'You have already marked attendance for this session.');
+            setSessionInfo(null);
+            setLocationStatus('idle');
+          } else if (result?.error === 'OUTSIDE_RADIUS') {
+            setLocationStatus('outside_radius');
+            setErrorMessage('You must be within the classroom area to mark attendance.');
+            toast.error(result.message);
+          } else {
+            toast.error(result.message || 'Failed to mark attendance.');
+          }
+          setLoading(false);
+          return;
+        }
+        setSuccess(true);
+        toast.success('Attendance marked successfully!');
+        reset();
+        setLoading(false);
         return;
       }
 
@@ -182,58 +208,11 @@ export function MarkAttendancePage() {
     }
   };
 
-  const confirmAttendance = async () => {
-    if (!profile || !sessionInfo || !studentCoords) return;
-    setLoading(true);
-    try {
-      const { result, error } = await attendanceService.verifyAndMarkAttendance(
-        profile.id,
-        sessionInfo.id,
-        studentCoords,
-      );
-      if (error) {
-        toast.error(error.message);
-        setLoading(false);
-        return;
-      }
-      if (!result?.success) {
-        const msg = result.message || 'Failed to mark attendance.';
-        if (result?.error === 'DUPLICATE') {
-          toast.error(msg);
-          setLocationStatus('idle');
-          setSessionInfo(null);
-          setStudentCoords(null);
-        } else if (result?.error === 'OUTSIDE_RADIUS') {
-          setLocationStatus('outside_radius');
-          const dist = result.distance;
-          const radius = result.radius;
-          const distMsg = dist >= 1000
-            ? `${(dist / 1000).toFixed(1)} km`
-            : `${Math.round(dist)} m`;
-          setErrorMessage(`You are ${distMsg} away from the classroom. You must be within ${radius}m to mark attendance.`);
-          toast.error(msg);
-        } else {
-          toast.error(msg);
-        }
-        setLoading(false);
-        return;
-      }
-      setSuccess(true);
-      toast.success(result.message || 'Attendance marked successfully!');
-      reset();
-    } catch {
-      toast.error('Failed to process attendance. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const resetAll = () => {
     setSuccess(false);
     setSessionInfo(null);
     setLocationStatus('idle');
     setErrorMessage('');
-    setStudentCoords(null);
     reset();
   };
 
@@ -300,18 +279,6 @@ export function MarkAttendancePage() {
                   </motion.div>
                 )}
 
-                {locationStatus === 'verified' && (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
-                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-                      <MapPin className="w-8 h-8 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">Location verified.</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">You may mark attendance.</p>
-                    </div>
-                  </motion.div>
-                )}
-
                 {locationStatus === 'denied' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                     <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
@@ -332,9 +299,6 @@ export function MarkAttendancePage() {
                     <div>
                       <p className="text-lg font-semibold text-red-600 dark:text-red-400">Outside classroom area</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">You must be within the classroom area to mark attendance.</p>
-                      {errorMessage && (
-                        <p className="text-xs text-red-500 mt-2 font-medium">{errorMessage}</p>
-                      )}
                     </div>
                   </motion.div>
                 )}
@@ -352,42 +316,13 @@ export function MarkAttendancePage() {
                 )}
               </div>
 
-              <div className="space-y-3">
-                {locationStatus === 'verified' && (
-                  <Button className="w-full" size="lg" onClick={confirmAttendance} disabled={loading}>
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Submitting...
-                      </div>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Confirm Attendance
-                      </>
-                    )}
+              {(locationStatus === 'denied' || locationStatus === 'outside_radius' || locationStatus === 'unsupported') && (
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full" onClick={resetAll}>
+                    Try Again
                   </Button>
-                )}
-                {locationStatus === 'checking' && (
-                  <Button className="w-full" size="lg" disabled>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Checking your location...
-                    </div>
-                  </Button>
-                )}
-                {(locationStatus === 'denied' || locationStatus === 'outside_radius' || locationStatus === 'unsupported') && (
-                  <div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={resetAll}
-                    >
-                      Try Again
-                    </Button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
