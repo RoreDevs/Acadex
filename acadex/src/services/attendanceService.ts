@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Attendance, LocationCoords } from '@/types';
+import type { Attendance } from '@/types';
 
 let fixAttempted = false;
 const fixBrokenRLS = async () => {
@@ -16,16 +16,6 @@ const fixBrokenRLS = async () => {
   }
   return false;
 };
-
-function haversineDistance(a: LocationCoords, b: LocationCoords): number {
-  const R = 6371000;
-  const dLat = (b.latitude - a.latitude) * Math.PI / 180;
-  const dLng = (b.longitude - a.longitude) * Math.PI / 180;
-  const sinDLat = Math.sin(dLat / 2);
-  const sinDLng = Math.sin(dLng / 2);
-  const aVal = sinDLat * sinDLat + Math.cos(a.latitude * Math.PI / 180) * Math.cos(b.latitude * Math.PI / 180) * sinDLng * sinDLng;
-  return R * 2 * Math.atan2(Math.sqrt(aVal), Math.sqrt(1 - aVal));
-}
 
 export const attendanceService = {
   async markAttendance(studentId: string, sessionId: string) {
@@ -89,7 +79,7 @@ export const attendanceService = {
     return !!data;
   },
 
-  async verifyAndMarkAttendance(studentId: string, sessionId: string, coords: LocationCoords) {
+  async verifyAndMarkAttendance(studentId: string, sessionId: string, coords: { latitude: number; longitude: number }) {
     const { data, error } = await supabase.rpc('verify_attendance_location', {
       p_student_id: studentId,
       p_session_id: sessionId,

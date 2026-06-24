@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { QrCode, CheckCircle, XCircle, ArrowRight, ScanLine, Clock, BookOpen, MapPin } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { sessionService } from '@/services/sessionService';
 import { attendanceService } from '@/services/attendanceService';
+import { settingsService } from '@/services/settingsService';
 import { DEFAULT_ATTENDANCE_RADIUS_METERS } from '@/lib/config';
 import toast from 'react-hot-toast';
 
@@ -42,6 +43,7 @@ export function MarkAttendancePage() {
   const [success, setSuccess] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
   const [studentCoords, setStudentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const {
@@ -53,14 +55,16 @@ export function MarkAttendancePage() {
     resolver: zodResolver(codeSchema),
   });
 
-  const checkLocation = (session: any): Promise<boolean> => {
+  const checkLocation = (session: any, radiusMeters: number): Promise<boolean> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         setLocationStatus('unsupported');
+        setErrorMessage('Your browser does not support geolocation or location is unavailable.');
         resolve(false);
         return;
       }
       setLocationStatus('checking');
+      setErrorMessage('');
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const coords = {
@@ -72,19 +76,26 @@ export function MarkAttendancePage() {
             coords.latitude, coords.longitude,
             session.latitude, session.longitude
           );
-          if (distance <= DEFAULT_ATTENDANCE_RADIUS_METERS) {
+          if (distance <= radiusMeters) {
             setLocationStatus('verified');
+            setErrorMessage('');
             resolve(true);
           } else {
             setLocationStatus('outside_radius');
+            const distMsg = distance >= 1000
+              ? `${(distance / 1000).toFixed(1)} km`
+              : `${Math.round(distance)} m`;
+            setErrorMessage(`You are ${distMsg} away from the classroom. You must be within ${radiusMeters}m to mark attendance.`);
             resolve(false);
           }
         },
         (err) => {
           if (err.code === err.PERMISSION_DENIED) {
             setLocationStatus('denied');
+            setErrorMessage('Please enable location services and grant browser permission to mark attendance.');
           } else {
             setLocationStatus('unsupported');
+            setErrorMessage('Unable to determine your location. Please try again.');
           }
           resolve(false);
         },
@@ -99,6 +110,7 @@ export function MarkAttendancePage() {
     setSuccess(false);
     setSessionInfo(null);
     setLocationStatus('idle');
+    setErrorMessage('');
     setStudentCoords(null);
 
     try {
@@ -143,9 +155,11 @@ export function MarkAttendancePage() {
       setSessionInfo(session);
 
       if (session.latitude != null && session.longitude != null) {
+        const radiusSetting = await settingsService.getSetting('attendance_radius_meters');
+        const radius = radiusSetting ? Number(radiusSetting) : DEFAULT_ATTENDANCE_RADIUS_METERS;
         setLocationStatus('checking');
         setLoading(false);
-        const locationOk = await checkLocation(session);
+        const locationOk = await checkLocation(session, radius);
         if (!locationOk) {
           return;
         }
@@ -179,14 +193,29 @@ export function MarkAttendancePage() {
       );
       if (error) {
         toast.error(error.message);
+        setLoading(false);
         return;
       }
       if (!result?.success) {
-        toast.error(result.message || 'Failed to mark attendance.');
+        const msg = result.message || 'Failed to mark attendance.';
         if (result?.error === 'DUPLICATE') {
-          setSessionInfo(null);
+          toast.error(msg);
           setLocationStatus('idle');
+          setSessionInfo(null);
+          setStudentCoords(null);
+        } else if (result?.error === 'OUTSIDE_RADIUS') {
+          setLocationStatus('outside_radius');
+          const dist = result.distance;
+          const radius = result.radius;
+          const distMsg = dist >= 1000
+            ? `${(dist / 1000).toFixed(1)} km`
+            : `${Math.round(dist)} m`;
+          setErrorMessage(`You are ${distMsg} away from the classroom. You must be within ${radius}m to mark attendance.`);
+          toast.error(msg);
+        } else {
+          toast.error(msg);
         }
+        setLoading(false);
         return;
       }
       setSuccess(true);
@@ -197,6 +226,15 @@ export function MarkAttendancePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetAll = () => {
+    setSuccess(false);
+    setSessionInfo(null);
+    setLocationStatus('idle');
+    setErrorMessage('');
+    setStudentCoords(null);
+    reset();
   };
 
   return (
@@ -236,11 +274,7 @@ export function MarkAttendancePage() {
               <Badge variant="success" className="text-sm px-4 py-1">
                 Present
               </Badge>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => { setSuccess(false); setSessionInfo(null); setLocationStatus('idle'); setStudentCoords(null); }}
-              >
+              <Button variant="outline" className="mt-4" onClick={resetAll}>
                 Mark Another
               </Button>
             </motion.div>
@@ -285,7 +319,7 @@ export function MarkAttendancePage() {
                     </div>
                     <div>
                       <p className="text-lg font-semibold text-red-600 dark:text-red-400">Location access denied</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please enable location services and grant browser permission to mark attendance.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{errorMessage}</p>
                     </div>
                   </motion.div>
                 )}
@@ -298,6 +332,9 @@ export function MarkAttendancePage() {
                     <div>
                       <p className="text-lg font-semibold text-red-600 dark:text-red-400">Outside classroom area</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">You must be within the classroom area to mark attendance.</p>
+                      {errorMessage && (
+                        <p className="text-xs text-red-500 mt-2 font-medium">{errorMessage}</p>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -309,7 +346,7 @@ export function MarkAttendancePage() {
                     </div>
                     <div>
                       <p className="text-lg font-semibold text-red-600 dark:text-red-400">Location not available</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your browser does not support geolocation or location is unavailable.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{errorMessage}</p>
                     </div>
                   </motion.div>
                 )}
@@ -340,13 +377,15 @@ export function MarkAttendancePage() {
                   </Button>
                 )}
                 {(locationStatus === 'denied' || locationStatus === 'outside_radius' || locationStatus === 'unsupported') && (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => { setLocationStatus('idle'); setSessionInfo(null); setStudentCoords(null); }}
-                  >
-                    Try Again
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={resetAll}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -390,7 +429,7 @@ export function MarkAttendancePage() {
           <p>1. Your lecturer will display a session code during class.</p>
           <p>2. Enter the code exactly as shown (case-insensitive).</p>
           <p>3. If location verification is enabled, allow browser location access when prompted.</p>
-          <p>4. Your attendance will be recorded after location verification.</p>
+          <p>4. You must be inside the classroom to mark attendance.</p>
           <p>5. You'll receive a confirmation once successful.</p>
         </CardContent>
       </Card>

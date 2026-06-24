@@ -68,10 +68,7 @@ export interface Setting {
   updated_at: string;
 }
 
-export interface LocationCoords {
-  latitude: number;
-  longitude: number;
-}
+
 
 export interface Notification {
   id: string;
