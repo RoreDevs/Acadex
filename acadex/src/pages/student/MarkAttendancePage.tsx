@@ -73,6 +73,10 @@ export function MarkAttendancePage() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
+          if (session.latitude == null || session.longitude == null) {
+            resolve({ ok: true, coords });
+            return;
+          }
           const distance = haversineDistance(
             coords.latitude, coords.longitude,
             session.latitude, session.longitude
@@ -149,58 +153,45 @@ export function MarkAttendancePage() {
 
       setSessionInfo(session);
 
-      if (session.latitude != null && session.longitude != null) {
-        const radiusSetting = await settingsService.getSetting('attendance_radius_meters');
-        const radius = radiusSetting ? Number(radiusSetting) : DEFAULT_ATTENDANCE_RADIUS_METERS;
-        setLoading(false);
-        const { ok, coords } = await checkLocation(session, radius);
-        if (!ok || !coords) {
-          return;
-        }
-        setLoading(true);
-        const { result, error } = await attendanceService.verifyAndMarkAttendance(
-          profile.id,
-          session.id,
-          coords,
-        );
-        if (error) {
-          toast.error(error.message);
-          setSessionInfo(null);
-          setLocationStatus('idle');
-          setLoading(false);
-          return;
-        }
-        if (!result?.success) {
-          if (result?.error === 'DUPLICATE') {
-            toast.error(result.message || 'You have already marked attendance for this session.');
-            setSessionInfo(null);
-            setLocationStatus('idle');
-          } else if (result?.error === 'OUTSIDE_RADIUS') {
-            setLocationStatus('outside_radius');
-            setErrorMessage('You must be within the classroom area to mark attendance.');
-            toast.error(result.message);
-          } else {
-            toast.error(result.message || 'Failed to mark attendance.');
-          }
-          setLoading(false);
-          return;
-        }
-        setSuccess(true);
-        toast.success('Attendance marked successfully!');
-        reset();
-        setLoading(false);
+      const radiusSetting = await settingsService.getSetting('attendance_radius_meters');
+      const radius = radiusSetting ? Number(radiusSetting) : DEFAULT_ATTENDANCE_RADIUS_METERS;
+      setLoading(false);
+      const { ok, coords } = await checkLocation(session, radius);
+      if (!ok || !coords) {
         return;
       }
-
-      const { error } = await attendanceService.markAttendance(profile.id, session.id);
+      setLoading(true);
+      const { result, error } = await attendanceService.verifyAndMarkAttendance(
+        profile.id,
+        session.id,
+        coords,
+      );
       if (error) {
         toast.error(error.message);
         setSessionInfo(null);
-      } else {
-        setSuccess(true);
-        toast.success('Attendance marked successfully!');
-        reset();
+        setLocationStatus('idle');
+        setLoading(false);
+        return;
       }
+      if (!result?.success) {
+        if (result?.error === 'DUPLICATE') {
+          toast.error(result.message || 'You have already marked attendance for this session.');
+          setSessionInfo(null);
+          setLocationStatus('idle');
+        } else if (result?.error === 'OUTSIDE_RADIUS') {
+          setLocationStatus('outside_radius');
+          setErrorMessage('You must be within the classroom area to mark attendance.');
+          toast.error(result.message);
+        } else {
+          toast.error(result.message || 'Failed to mark attendance.');
+        }
+        setLoading(false);
+        return;
+      }
+      setSuccess(true);
+      toast.success('Attendance marked successfully!');
+      reset();
+      setLoading(false);
     } catch (err) {
       toast.error('Failed to process attendance. Please try again.');
     } finally {
