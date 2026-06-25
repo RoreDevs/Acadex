@@ -77,15 +77,15 @@ export function MarkAttendancePage() {
             resolve({ ok: true, coords });
             return;
           }
-          const distance = haversineDistance(
+          const distance = Math.round(haversineDistance(
             coords.latitude, coords.longitude,
             session.latitude, session.longitude
-          );
+          ));
           if (distance <= radiusMeters) {
             resolve({ ok: true, coords });
           } else {
             setLocationStatus('outside_radius');
-            setErrorMessage('You must be within the classroom area to mark attendance.');
+            setErrorMessage(`You must be within the classroom area to mark attendance. (Your distance: ${distance}m, max allowed: ${radiusMeters}m)`);
             resolve({ ok: false });
           }
         },
