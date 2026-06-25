@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 -- Insert default attendance radius (200 meters)
-INSERT INTO settings (key, value) VALUES ('attendance_radius_meters', '200')
+INSERT INTO settings (key, value) VALUES ('attendance_radius_meters', '500')
 ON CONFLICT (key) DO NOTHING;
 
 -- RPC function: verify location and mark attendance server-side
@@ -73,10 +73,10 @@ BEGIN
   SELECT latitude, longitude INTO v_session_lat, v_session_lng
   FROM sessions WHERE id = p_session_id;
 
-  -- Get configured radius (default 200 meters)
+  -- Get configured radius (default 500 meters)
   SELECT COALESCE(
     (SELECT value::INTEGER FROM settings WHERE key = 'attendance_radius_meters'),
-    200
+    500
   ) INTO v_radius_meters;
 
   -- If session has no location set, allow attendance without location check (backward compatible)
