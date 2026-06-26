@@ -59,59 +59,70 @@ export function MarkAttendancePage() {
     radiusMeters: number
   ): Promise<{ ok: boolean; coords?: { latitude: number; longitude: number } }> => {
     return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        setLocationStatus('unsupported');
-        setErrorMessage('Your browser does not support geolocation or location is unavailable.');
-        resolve({ ok: false });
+if (!navigator.geolocation) {
+  setLocationStatus('unsupported');
+  setErrorMessage('Your browser does not support geolocation or location is unavailable.');
+  resolve({ ok: false });
+  return;
+}
+setLocationStatus('checking');
+setErrorMessage('');
+
+const attemptLocation = (highAccuracy) => {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const accuracy = position.coords.accuracy;
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+      if (session.latitude == null || session.longitude == null) {
+        resolve({ ok: true, coords });
         return;
       }
-      setLocationStatus('checking');
-      setErrorMessage('');
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const accuracy = position.coords.accuracy;
-          const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          if (session.latitude == null || session.longitude == null) {
-            resolve({ ok: true, coords });
-            return;
-          }
-          const distance = haversineDistance(
-            coords.latitude, coords.longitude,
-            session.latitude, session.longitude
-          );
-          console.log('[GeoLocation] Student coords:', { latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6), accuracy: accuracy.toFixed(1) + 'm' });
-          console.log('[GeoLocation] Session coords:', { latitude: session.latitude, longitude: session.longitude });
-          console.log('[GeoLocation] Distance:', distance.toFixed(1) + 'm / Radius:', radiusMeters + 'm');
-          console.log('[GeoLocation] Result:', distance <= radiusMeters ? 'PASS' : 'FAIL');
-          if (accuracy > 100) {
-            toast('Your device location accuracy is low (' + accuracy.toFixed(0) + 'm). For better results, enable precise location, move closer to a window, or retry.', { duration: 8000 });
-          }
-          if (distance <= radiusMeters) {
-            resolve({ ok: true, coords });
-          } else {
-            setLocationStatus('outside_radius');
-            setErrorMessage('You must be within the classroom area to mark attendance.');
-            resolve({ ok: false });
-          }
-        },
-        (err) => {
-          if (err.code === err.PERMISSION_DENIED) {
-            setLocationStatus('denied');
-            setErrorMessage('Grant Location Access before you can sign Attendance');
-          } else {
-            setLocationStatus('unsupported');
-            setErrorMessage('Unable to determine your location. Please try again.');
-          }
-          resolve({ ok: false });
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      const distance = haversineDistance(
+        coords.latitude, coords.longitude,
+        session.latitude, session.longitude
       );
-    });
-  };
+      console.log('[GeoLocation] Student coords:', { latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6), accuracy: accuracy.toFixed(1) + 'm' });
+      console.log('[GeoLocation] Session coords:', { latitude: session.latitude, longitude: session.longitude });
+      console.log('[GeoLocation] Distance:', distance.toFixed(1) + 'm / Radius:', radiusMeters + 'm');
+      console.log('[GeoLocation] Result:', distance <= radiusMeters ? 'PASS' : 'FAIL');
+      if (accuracy > 100) {
+        toast('Your device location accuracy is low (' + accuracy.toFixed(0) + 'm). For better results, enable precise location, move closer to a window, or retry.', { duration: 8000 });
+      }
+      if (distance <= radiusMeters) {
+        resolve({ ok: true, coords });
+      } else {
+        setLocationStatus('outside_radius');
+        setErrorMessage('You must be within the classroom area to mark attendance.');
+        resolve({ ok: false });
+      }
+    },
+    (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        setLocationStatus('denied');
+        setErrorMessage('Grant Location Access before you can sign Attendance');
+        resolve({ ok: false });
+      } else if (err.code === err.TIMEOUT && highAccuracy) {
+        // High-accuracy GPS timed out (common indoors) — retry with network-based location
+        console.log('[GeoLocation] High-accuracy timed out, retrying with network-based location');
+        attemptLocation(false);
+      } else if (err.code === err.TIMEOUT) {
+        setLocationStatus('unsupported');
+        setErrorMessage('Location is taking too long to respond. Please move near a window or open area and try again.');
+        resolve({ ok: false });
+      } else {
+        setLocationStatus('unsupported');
+        setErrorMessage('Unable to determine your location. Please check that location services are turned on and try again.');
+        resolve({ ok: false });
+      }
+    },
+    { enableHighAccuracy: highAccuracy, timeout: highAccuracy ? 15000 : 20000, maximumAge: 0 },
+  );
+};
 
+attemptLocation(true);
   const onSubmit = async (data: CodeForm) => {
     if (!profile) return;
     setLoading(true);

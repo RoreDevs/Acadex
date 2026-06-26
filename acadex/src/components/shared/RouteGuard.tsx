@@ -48,7 +48,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user && !profile) {
-    return <Navigate to="/login" replace />;
+    return <LoadingScreen />;
   }
 
   if (user) {
