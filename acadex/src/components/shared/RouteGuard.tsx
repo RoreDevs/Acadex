@@ -20,7 +20,7 @@ export function RouteGuard({ children, roles }: RouteGuardProps) {
   }
 
   if (roles && !profile) {
-    return <LoadingScreen />;
+    return <Navigate to="/login" replace />;
   }
 
   if (roles && profile && !roles.includes(profile.role)) {
@@ -48,7 +48,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user && !profile) {
-    return <LoadingScreen />;
+    return <Navigate to="/login" replace />;
   }
 
   if (user) {
