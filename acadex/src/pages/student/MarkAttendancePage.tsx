@@ -68,7 +68,7 @@ if (!navigator.geolocation) {
 setLocationStatus('checking');
 setErrorMessage('');
 
-const attemptLocation = (highAccuracy) => {
+const attemptLocation = (highAccuracy: boolean) => {
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const accuracy = position.coords.accuracy;
@@ -123,6 +123,9 @@ const attemptLocation = (highAccuracy) => {
 };
 
 attemptLocation(true);
+    });
+  };
+
   const onSubmit = async (data: CodeForm) => {
     if (!profile) return;
     setLoading(true);
