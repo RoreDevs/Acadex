@@ -69,6 +69,7 @@ export function MarkAttendancePage() {
       setErrorMessage('');
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          const accuracy = position.coords.accuracy;
           const coords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -81,6 +82,13 @@ export function MarkAttendancePage() {
             coords.latitude, coords.longitude,
             session.latitude, session.longitude
           );
+          console.log('[GeoLocation] Student coords:', { latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6), accuracy: accuracy.toFixed(1) + 'm' });
+          console.log('[GeoLocation] Session coords:', { latitude: session.latitude, longitude: session.longitude });
+          console.log('[GeoLocation] Distance:', distance.toFixed(1) + 'm / Radius:', radiusMeters + 'm');
+          console.log('[GeoLocation] Result:', distance <= radiusMeters ? 'PASS' : 'FAIL');
+          if (accuracy > 100) {
+            toast('Your device location accuracy is low (' + accuracy.toFixed(0) + 'm). For better results, enable precise location, move closer to a window, or retry.', { duration: 8000 });
+          }
           if (distance <= radiusMeters) {
             resolve({ ok: true, coords });
           } else {
@@ -99,7 +107,7 @@ export function MarkAttendancePage() {
           }
           resolve({ ok: false });
         },
-        { enableHighAccuracy: true, timeout: 10000 },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
       );
     });
   };
