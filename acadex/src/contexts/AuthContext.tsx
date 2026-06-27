@@ -157,6 +157,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     program?: string;
     level?: string;
   }) => {
+    if (data.index_number) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('index_number', data.index_number)
+        .maybeSingle();
+
+      if (existing) {
+        return { error: 'Index number exist' };
+      }
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,

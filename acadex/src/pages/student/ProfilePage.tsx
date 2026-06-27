@@ -27,6 +27,7 @@ export function ProfilePage() {
   const { profile, updateProfile, deleteAccount } = useAuth();
   const programName = useProgramName(profile?.program);
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const {
@@ -129,23 +130,36 @@ export function ProfilePage() {
 
           <Separator className="mb-6" />
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Edit Profile</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input id="full_name" {...register('full_name')} error={errors.full_name?.message} />
+          {!editing ? (
+            <div className="flex justify-center sm:justify-start">
+              <Button onClick={() => setEditing(true)} variant="outline">
+                Edit Profile
+              </Button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Edit Profile</h3>
 
-            <div className="space-y-2">
-              <Label htmlFor="index_number">Index Number</Label>
-              <Input id="index_number" {...register('index_number')} error={errors.index_number?.message} />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input id="full_name" {...register('full_name')} error={errors.full_name?.message} />
+              </div>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </form>
+              <div className="space-y-2">
+                <Label htmlFor="index_number">Index Number</Label>
+                <Input id="index_number" {...register('index_number')} error={errors.index_number?.message} />
+              </div>
+
+              <div className="flex gap-3">
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setEditing(false)} disabled={loading}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
 
