@@ -2,10 +2,12 @@ import { supabase } from '@/lib/supabase';
 import type { AuditLog } from '@/types';
 
 export const auditService = {
-  async logAction(userId: string, userName: string, action: string, details?: string) {
-    const { error } = await supabase.from('audit_logs').insert([
-      { user_id: userId, user_name: userName, action, details },
-    ]);
+  // Identity (user_id, user_name) is set server-side by the SECURITY DEFINER RPC.
+  async logAction(_userId: string, _userName: string, action: string, details?: string) {
+    const { error } = await supabase.rpc('log_audit', {
+      p_action: action,
+      p_details: details ?? null,
+    });
     return { error };
   },
 

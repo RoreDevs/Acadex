@@ -1,6 +1,7 @@
 import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AcademicPeriodProvider } from '@/contexts/AcademicPeriodContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { router } from '@/routes';
@@ -10,7 +11,8 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <AcademicPeriodProvider>
+            <RouterProvider router={router} />
           <Toaster
             position="top-right"
             toastOptions={{
@@ -31,6 +33,7 @@ export default function App() {
               },
             }}
           />
+          </AcademicPeriodProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

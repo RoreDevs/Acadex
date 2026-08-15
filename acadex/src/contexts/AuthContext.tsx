@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { SUPER_ADMIN_EMAIL } from '@/lib/config';
 import type { UserProfile, Role } from '@/types';
 
 interface AuthContextType {
@@ -82,13 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const isRecovery = window.location.hash.includes('type=recovery');
 
-    const timeout = setTimeout(() => {
-      setProfileLoading(false);
-      setAuthLoading(false);
-    }, 6000);
-
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      clearTimeout(timeout);
       if (session?.user) {
         if (isRecovery) setRecovering(true);
         setUser(session.user);
@@ -131,19 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && authData.user) {
       setUser(authData.user);
-      if (email === SUPER_ADMIN_EMAIL) {
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', authData.user.id)
-          .single();
-        if (existingProfile && existingProfile.role !== 'super_admin') {
-          await supabase
-            .from('profiles')
-            .update({ role: 'super_admin' })
-            .eq('id', authData.user.id);
-        }
-      }
       await fetchProfile(authData.user.id);
     }
     return { error: error?.message || null };
@@ -182,26 +162,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (authError) return { error: authError.message };
 
     if (authData.user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            email: data.email,
-            full_name: data.full_name,
-            index_number: data.index_number ?? null,
-            program: data.program ?? null,
-            level: data.level ?? null,
-            role: data.email === SUPER_ADMIN_EMAIL ? 'super_admin' : 'student',
-          },
-        ])
-        .select()
-        .single();
+      // Role is always 'student' and is set server-side by the SECURITY DEFINER RPC.
+      const { error: profileError } = await supabase.rpc('create_signup_profile', {
+        p_user_id: authData.user.id,
+        p_email: data.email,
+        p_full_name: data.full_name,
+        p_index_number: data.index_number ?? null,
+        p_program: data.program ?? null,
+        p_level: data.level ?? null,
+      });
 
       if (profileError) return { error: profileError.message };
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
       setUser(authData.user);
-      setProfile(profileData as UserProfile);
-      return { error: null, data: profileData as UserProfile };
+      setProfile((profileData as UserProfile) ?? null);
+      return { error: null, data: (profileData as UserProfile) ?? undefined };
     }
 
     return { error: 'Registration failed' };

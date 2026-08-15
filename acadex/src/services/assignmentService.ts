@@ -88,6 +88,8 @@ export const assignmentService = {
     file_url?: string;
     file_name?: string;
     file_size?: number;
+    semester_id?: string;
+    course_offering_id?: string;
   }) {
     const { error } = await supabase
       .from('assignments')
@@ -102,6 +104,8 @@ export const assignmentService = {
           file_url: data.file_url,
           file_name: data.file_name,
           file_size: data.file_size,
+          semester_id: data.semester_id ?? null,
+          course_offering_id: data.course_offering_id ?? null,
         },
       ]);
 
@@ -141,7 +145,14 @@ export const assignmentService = {
   },
 
   async uploadFile(file: File, programId: string, courseId: string) {
-    const fileExt = file.name.split('.').pop();
+    const allowed = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'txt'];
+    const fileExt = (file.name.split('.').pop() || '').toLowerCase();
+    if (!allowed.includes(fileExt)) {
+      return { error: { message: 'Unsupported file type.' } as any, url: null };
+    }
+    if (file.size > 52428800) {
+      return { error: { message: 'File exceeds the 50MB limit.' } as any, url: null };
+    }
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `assignments/${programId}/${courseId}/${fileName}`;
 

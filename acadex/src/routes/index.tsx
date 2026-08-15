@@ -47,6 +47,7 @@ const SuperAdminSlidesPage = lazyLoad(() => import('@/pages/super-admin/SuperAdm
 const SuperAdminAssignmentsPage = lazyLoad(() => import('@/pages/super-admin/SuperAdminAssignmentsPage'), 'SuperAdminAssignmentsPage');
 const SuperAdminNotificationsPage = lazyLoad(() => import('@/pages/super-admin/NotificationsPage'), 'NotificationsPage');
 const AuditLogPage = lazyLoad(() => import('@/pages/super-admin/AuditLogPage'), 'AuditLogPage');
+const AcademicPeriodsPage = lazyLoad(() => import('@/pages/super-admin/AcademicPeriodsPage'), 'AcademicPeriodsPage');
 
 const S = (Component: React.LazyExoticComponent<any>) => (
   <Suspense fallback={<LoadingScreen />}><Component /></Suspense>
@@ -103,6 +104,7 @@ export const router = createBrowserRouter([
       { path: 'assignments', element: S(SuperAdminAssignmentsPage) },
       { path: 'notifications', element: S(SuperAdminNotificationsPage) },
       { path: 'audit', element: S(AuditLogPage) },
+      { path: 'academic', element: S(AcademicPeriodsPage) },
     ],
   },
 ]);

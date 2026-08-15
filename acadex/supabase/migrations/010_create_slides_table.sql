@@ -19,16 +19,19 @@ CREATE INDEX IF NOT EXISTS idx_slides_uploader ON public.slides(uploaded_by);
 -- RLS
 ALTER TABLE public.slides ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Everyone can view slides" ON public.slides;
 CREATE POLICY "Everyone can view slides"
   ON public.slides FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admins and super admins can insert slides" ON public.slides;
 CREATE POLICY "Admins and super admins can insert slides"
   ON public.slides FOR INSERT
   WITH CHECK (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
   );
 
+DROP POLICY IF EXISTS "Admins can delete own slides" ON public.slides;
 CREATE POLICY "Admins can delete own slides"
   ON public.slides FOR DELETE
   USING (
@@ -42,10 +45,12 @@ VALUES ('slides', 'slides', TRUE, FALSE, 52428800, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- Allow public access to slides bucket
+DROP POLICY IF EXISTS "Public can view slides" ON storage.objects;
 CREATE POLICY "Public can view slides"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'slides');
 
+DROP POLICY IF EXISTS "Admins and super admins can upload slides" ON storage.objects;
 CREATE POLICY "Admins and super admins can upload slides"
   ON storage.objects FOR INSERT
   WITH CHECK (
@@ -53,6 +58,7 @@ CREATE POLICY "Admins and super admins can upload slides"
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
   );
 
+DROP POLICY IF EXISTS "Admins and super admins can delete slides from storage" ON storage.objects;
 CREATE POLICY "Admins and super admins can delete slides from storage"
   ON storage.objects FOR DELETE
   USING (
