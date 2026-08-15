@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService } from '@/services/profileService';
+import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 const registerSchema = z.object({
@@ -43,13 +44,23 @@ export function SuperAdminRegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
-    const { error } = await signUp(data);
-    setLoading(false);
+    const { error, data: profile } = await signUp(data);
     if (error) {
+      setLoading(false);
       toast.error(error);
-    } else {
-      toast.success('Account created successfully!');
+      return;
     }
+    // Promote this first account to super admin (server guards "only if none exists")
+    const { error: promoteError } = await supabase.rpc('promote_to_super_admin', {
+      p_user_id: profile?.id,
+    });
+    setLoading(false);
+    if (promoteError) {
+      toast.error(promoteError.message);
+      return;
+    }
+    toast.success('Super admin account created successfully!');
+    navigate('/login', { replace: true });
   };
 
   if (checking) return null;

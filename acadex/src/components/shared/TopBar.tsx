@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentAcademicPeriod } from '@/contexts/AcademicPeriodContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Bell } from 'lucide-react';
+import { Moon, Sun, Bell, CalendarRange } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { notificationService } from '@/services/notificationService';
 
 export function TopBar() {
   const { user, profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { currentYear, currentSemester } = useCurrentAcademicPeriod();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -31,17 +33,30 @@ export function TopBar() {
 
   const notifPath = profile?.role === 'super_admin' ? '/super-admin/notifications' : '/notifications';
 
+  const periodLabel =
+    currentYear && currentSemester
+      ? `${currentYear.name} · ${currentSemester.name}`
+      : currentYear
+        ? currentYear.name
+        : null;
+
   return (
     <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3 px-6">
+      {periodLabel && (
+        <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-full px-3 py-1.5 mr-auto">
+          <CalendarRange className="w-3.5 h-3.5 text-primary-500" />
+          {periodLabel}
+        </div>
+      )}
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+        <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </Button>
       </motion.div>
 
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Link to={notifPath}>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1">

@@ -56,6 +56,14 @@ export const dashboardService = {
       .eq('program', programId)
       .eq('level', level);
 
+    const { data: programSessions } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('program_id', programId)
+      .eq('level', level);
+
+    const sessionIds = (programSessions || []).map((s: any) => s.id);
+
     const { count: total_sessions } = await supabase
       .from('sessions')
       .select('*', { count: 'exact', head: true })
@@ -77,7 +85,8 @@ export const dashboardService = {
 
     const { count: total_attendance } = await supabase
       .from('attendance')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .in('session_id', sessionIds.length > 0 ? sessionIds : ['none']);
 
     return {
       total_students: total_students || 0,
@@ -115,28 +124,34 @@ export const dashboardService = {
   },
 
   async getProgramAttendanceComparison() {
-    const { data: programs } = await supabase.from('programs').select('id, name');
+    // Two queries instead of N+1: fetch sessions (with program) once, then attendance once.
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('id, program_id, programs(name)');
 
-    const result = [];
-    for (const program of programs || []) {
-      const { data: sessions } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('program_id', program.id);
+    const sessionIds = (sessions || []).map((s: any) => s.id);
+    if (sessionIds.length === 0) return [];
 
-      if (sessions && sessions.length > 0) {
-        const sessionIds = sessions.map((s) => s.id);
-        const { count } = await supabase
-          .from('attendance')
-          .select('*', { count: 'exact', head: true })
-          .in('session_id', sessionIds);
+    const { data: attendance } = await supabase
+      .from('attendance')
+      .select('session_id')
+      .in('session_id', sessionIds);
 
-        result.push({
-          name: program.name,
-          attendance: count || 0,
-        });
-      }
+    const programNameById: Record<string, string> = {};
+    const countByProgram: Record<string, number> = {};
+    for (const s of sessions || []) {
+      const pid = s.program_id as string;
+      programNameById[pid] = (s.programs as any)?.name || pid;
+      if (countByProgram[pid] === undefined) countByProgram[pid] = 0;
     }
-    return result;
+    for (const a of attendance || []) {
+      const pid = (sessions || []).find((s: any) => s.id === a.session_id)?.program_id as string;
+      if (pid) countByProgram[pid] = (countByProgram[pid] || 0) + 1;
+    }
+
+    return Object.entries(countByProgram).map(([pid, attendanceCount]) => ({
+      name: programNameById[pid] || pid,
+      attendance: attendanceCount,
+    }));
   },
 };

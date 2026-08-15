@@ -4,8 +4,10 @@ import type { Session } from '@/types';
 function generateAttendanceCode(courseCode: string): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let random = '';
+  const values = new Uint32Array(4);
+  crypto.getRandomValues(values);
   for (let i = 0; i < 4; i++) {
-    random += chars.charAt(Math.floor(Math.random() * chars.length));
+    random += chars.charAt(values[i] % chars.length);
   }
   return `${courseCode}-${random}`;
 }
@@ -21,8 +23,11 @@ export const sessionService = {
     program_id: string;
     level: string;
     course_code: string;
+    created_by?: string;
     latitude?: number;
     longitude?: number;
+    semester_id?: string;
+    course_offering_id?: string;
   }) {
     let attendance_code = generateAttendanceCode(data.course_code);
     let isUnique = false;
@@ -56,8 +61,11 @@ export const sessionService = {
           is_active: true,
           program_id: data.program_id,
           level: data.level,
+          created_by: data.created_by ?? null,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
+          semester_id: data.semester_id ?? null,
+          course_offering_id: data.course_offering_id ?? null,
         },
       ])
       .select()

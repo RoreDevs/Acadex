@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { QrCode, FileText, MapPin, Crosshair } from 'lucide-react';
+import { QrCode, FileText, MapPin, Crosshair, CalendarRange } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentAcademicPeriod } from '@/contexts/AcademicPeriodContext';
 import { courseService } from '@/services/courseService';
+import { academicPeriodService } from '@/services/academicPeriodService';
 import { sessionService } from '@/services/sessionService';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +31,7 @@ type SessionForm = z.infer<typeof sessionSchema>;
 
 export function GenerateSessionPage() {
   const { profile } = useAuth();
+  const { currentYear, currentSemester } = useCurrentAcademicPeriod();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -92,6 +95,25 @@ export function GenerateSessionPage() {
       return;
     }
 
+    let semesterId: string | undefined;
+    let offeringId: string | undefined;
+    if (currentSemester?.id) {
+      semesterId = currentSemester.id;
+      try {
+        const offering = await academicPeriodService.getCurrentOffering(
+          data.course_id,
+          profile.program!,
+          profile.level!,
+          currentSemester.id,
+        );
+        offeringId = offering?.id;
+      } catch {
+        offeringId = undefined;
+      }
+    } else {
+      toast('No academic semester is currently set. The session will not be linked to an academic period.', { duration: 6000 });
+    }
+
     const { error } = await sessionService.createSession({
       course_id: data.course_id,
       title: data.title,
@@ -102,8 +124,11 @@ export function GenerateSessionPage() {
       program_id: profile.program!,
       level: profile.level!,
       course_code: course.code,
+      created_by: profile.id,
       latitude: classroomLocation?.latitude,
       longitude: classroomLocation?.longitude,
+      semester_id: semesterId,
+      course_offering_id: offeringId,
     });
 
     setLoading(false);
@@ -121,6 +146,15 @@ export function GenerateSessionPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Generate Session</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">Create a new attendance session for your class</p>
       </div>
+
+      {currentYear && currentSemester && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800 rounded-xl px-4 py-3">
+          <CalendarRange className="w-4 h-4 text-primary-500 shrink-0" />
+          <span className="font-medium">Academic Period:</span>
+          <span>{currentYear.name} · {currentSemester.name}</span>
+          <span className="text-xs text-gray-400">({currentSemester.start_date} → {currentSemester.end_date})</span>
+        </div>
+      )}
 
       <Card>
         <CardHeader>

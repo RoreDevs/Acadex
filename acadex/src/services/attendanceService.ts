@@ -1,22 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Attendance } from '@/types';
 
-let fixAttempted = false;
-const fixBrokenRLS = async () => {
-  if (fixAttempted) return false;
-  fixAttempted = true;
-  const fixSql = `DROP POLICY IF EXISTS "Admins can view attendance in their program" ON attendance;`;
-  for (const { fn, param } of [
-    { fn: 'exec_sql', param: { sql: fixSql } },
-    { fn: 'execute_sql', param: { sql_text: fixSql } },
-    { fn: 'raw_sql', param: { query: fixSql } },
-  ]) {
-    const { error } = await supabase.rpc(fn, param);
-    if (!error) return true;
-  }
-  return false;
-};
-
 export const attendanceService = {
   async markAttendance(studentId: string, sessionId: string) {
     const { data, error } = await supabase
@@ -34,38 +18,22 @@ export const attendanceService = {
   },
 
   async getAttendanceByStudent(studentId: string) {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('attendance')
       .select('*, sessions(title, session_date, start_time, end_time, courses(title, code))')
       .eq('student_id', studentId)
       .order('timestamp', { ascending: false });
-    if (error) {
-      await fixBrokenRLS();
-      const retry = await supabase
-        .from('attendance')
-        .select('*, sessions(title, session_date, start_time, end_time, courses(title, code))')
-        .eq('student_id', studentId)
-        .order('timestamp', { ascending: false });
-      data = retry.data;
-    }
+    if (error) console.error('getAttendanceByStudent error:', error.message);
     return (data || []) as any[];
   },
 
   async getAttendanceBySession(sessionId: string) {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('attendance')
       .select('*, profiles!inner(full_name, index_number)')
       .eq('session_id', sessionId)
       .order('timestamp');
-    if (error) {
-      await fixBrokenRLS();
-      const retry = await supabase
-        .from('attendance')
-        .select('*, profiles!inner(full_name, index_number)')
-        .eq('session_id', sessionId)
-        .order('timestamp');
-      data = retry.data;
-    }
+    if (error) console.error('getAttendanceBySession error:', error.message);
     return (data || []) as any[];
   },
 
@@ -96,7 +64,7 @@ export const attendanceService = {
       supabase.from('attendance').select('id', { count: 'exact' }).eq('student_id', studentId),
     ]);
 
-    const courseIds = enrolledCourses.data?.map(e => e.course_id) || [];
+    const courseIds = enrolledCourses.data?.map((e: any) => e.course_id) || [];
 
     const { data: sessions } = await supabase
       .from('sessions')
@@ -117,38 +85,22 @@ export const attendanceService = {
   },
 
   async getAllAttendanceRecords() {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('attendance')
       .select('*, sessions(title, session_date, courses(title, code)), profiles!inner(full_name, index_number)')
       .order('timestamp', { ascending: false });
-    if (error) {
-      await fixBrokenRLS();
-      const retry = await supabase
-        .from('attendance')
-        .select('*, sessions(title, session_date, courses(title, code)), profiles!inner(full_name, index_number)')
-        .order('timestamp', { ascending: false });
-      data = retry.data;
-    }
+    if (error) console.error('getAllAttendanceRecords error:', error.message);
     return (data || []) as any[];
   },
 
   async getAttendanceByDateRange(startDate: string, endDate: string) {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('attendance')
       .select('*, sessions(title, session_date, courses(title, code)), profiles(full_name, index_number)')
       .gte('timestamp', startDate)
       .lte('timestamp', endDate)
       .order('timestamp', { ascending: false });
-    if (error) {
-      await fixBrokenRLS();
-      const retry = await supabase
-        .from('attendance')
-        .select('*, sessions(title, session_date, courses(title, code)), profiles(full_name, index_number)')
-        .gte('timestamp', startDate)
-        .lte('timestamp', endDate)
-        .order('timestamp', { ascending: false });
-      data = retry.data;
-    }
+    if (error) console.error('getAttendanceByDateRange error:', error.message);
     return (data || []) as any[];
   },
 
@@ -159,27 +111,13 @@ export const attendanceService = {
   },
 
   async getAttendanceReportByCourse(courseId: string) {
-    const getData = async (retry = false) => {
-      if (retry) await fixBrokenRLS();
+    const sessionsRes = await supabase.from('sessions').select('id').eq('course_id', courseId);
+    const sessionIds = sessionsRes.data?.map((s: any) => s.id) || [];
 
-      const sessionsRes = await supabase.from('sessions').select('id').eq('course_id', courseId);
-      const sessionIds = sessionsRes.data?.map((s: any) => s.id) || [];
-
-      let attRecords: any[] = [];
-      if (sessionIds.length > 0) {
-        const attRes = await supabase.from('attendance').select('student_id').in('session_id', sessionIds);
-        attRecords = attRes.data || [];
-      }
-
-      return { sessionIds, attRecords };
-    };
-
-    let { sessionIds, attRecords } = await getData(false);
-    const needsRetry = sessionIds.length === 0 || (sessionIds.length > 0 && attRecords.length === 0);
-    if (needsRetry) {
-      const retry = await getData(true);
-      sessionIds = retry.sessionIds;
-      attRecords = retry.attRecords;
+    let attRecords: any[] = [];
+    if (sessionIds.length > 0) {
+      const attRes = await supabase.from('attendance').select('student_id').in('session_id', sessionIds);
+      attRecords = attRes.data || [];
     }
 
     const totalSessions = sessionIds.length;

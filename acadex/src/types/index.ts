@@ -48,6 +48,8 @@ export interface Session {
   level: string;
   latitude?: number;
   longitude?: number;
+  semester_id?: string;
+  course_offering_id?: string;
 }
 
 export interface Attendance {
@@ -93,6 +95,8 @@ export interface Slide {
   uploaded_by?: string;
   program_id?: string;
   created_at: string;
+  semester_id?: string;
+  course_offering_id?: string;
   courses?: { code: string; title: string };
   profiles?: { full_name: string };
 }
@@ -110,8 +114,56 @@ export interface Assignment {
   file_size?: number;
   created_at: string;
   updated_at?: string;
+  semester_id?: string;
+  course_offering_id?: string;
   courses?: { code: string; title: string };
   profiles?: { full_name: string };
+}
+
+export interface AcademicYear {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  semesters?: Semester[];
+}
+
+export interface Semester {
+  id: string;
+  academic_year_id: string;
+  name: string;
+  semester_number: number;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  academic_years?: Pick<AcademicYear, 'id' | 'name'>;
+}
+
+export interface CourseOffering {
+  id: string;
+  course_id: string;
+  semester_id: string;
+  program_id: string;
+  level: string;
+  course_rep_id?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  courses?: { id: string; code: string; title: string };
+  semesters?: Pick<Semester, 'id' | 'name' | 'semester_number'>;
+  programs?: { id: string; name: string };
+}
+
+export interface CurrentAcademicPeriod {
+  year: AcademicYear | null;
+  semester: Semester | null;
 }
 
 export interface AuditLog {
