@@ -32,7 +32,8 @@ export const dashboardService = {
 
     const { count: total_attendance } = await supabase
       .from('attendance')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['present', 'late']);
 
     return {
       total_students: total_students || 0,
@@ -86,6 +87,7 @@ export const dashboardService = {
     const { count: total_attendance } = await supabase
       .from('attendance')
       .select('*', { count: 'exact', head: true })
+      .in('status', ['present', 'late'])
       .in('session_id', sessionIds.length > 0 ? sessionIds : ['none']);
 
     return {
@@ -110,6 +112,7 @@ export const dashboardService = {
     const { data } = await supabase
       .from('attendance')
       .select('timestamp')
+      .in('status', ['present', 'late'])
       .gte('timestamp', startDate.toISOString())
       .lte('timestamp', endDate.toISOString())
       .order('timestamp');
@@ -135,6 +138,7 @@ export const dashboardService = {
     const { data: attendance } = await supabase
       .from('attendance')
       .select('session_id')
+      .in('status', ['present', 'late'])
       .in('session_id', sessionIds);
 
     const programNameById: Record<string, string> = {};

@@ -28,6 +28,11 @@ export const sessionService = {
     longitude?: number;
     semester_id?: string;
     course_offering_id?: string;
+    venue?: string;
+    attendance_open_time?: string;
+    attendance_close_time?: string;
+    late_threshold_minutes?: number;
+    location_radius_meters?: number;
   }) {
     let attendance_code = generateAttendanceCode(data.course_code);
     let isUnique = false;
@@ -58,6 +63,7 @@ export const sessionService = {
           end_time: data.end_time,
           attendance_code,
           qr_code: qrCode,
+          status: 'scheduled',
           is_active: true,
           program_id: data.program_id,
           level: data.level,
@@ -66,6 +72,11 @@ export const sessionService = {
           longitude: data.longitude ?? null,
           semester_id: data.semester_id ?? null,
           course_offering_id: data.course_offering_id ?? null,
+          venue: data.venue ?? null,
+          attendance_open_time: data.attendance_open_time ?? null,
+          attendance_close_time: data.attendance_close_time ?? null,
+          late_threshold_minutes: data.late_threshold_minutes ?? null,
+          location_radius_meters: data.location_radius_meters ?? null,
         },
       ])
       .select()
@@ -120,19 +131,7 @@ export const sessionService = {
       .eq('attendance_code', code)
       .maybeSingle();
     if (error) throw error;
-    if (!data) return null;
-
-    if (data.is_active) {
-      const [y, m, d] = data.session_date.split('-').map(Number);
-      const [hh, mm, ss = '0'] = data.end_time.split(':');
-      const sessionEnd = new Date(y, m - 1, d, +hh, +mm, +ss);
-      if (new Date() > sessionEnd) {
-        await supabase.from('sessions').update({ is_active: false }).eq('id', data.id);
-        data.is_active = false;
-      }
-    }
-
-    return data as any;
+    return (data || null) as any;
   },
 
   async updateSession(id: string, updates: Partial<Session>) {
@@ -144,11 +143,32 @@ export const sessionService = {
   },
 
   async endSession(id: string) {
-    const { error } = await supabase
-      .from('sessions')
-      .update({ is_active: false })
-      .eq('id', id);
-    return { error };
+    return this.setSessionStatus(id, 'closed');
+  },
+
+  async setSessionStatus(id: string, status: 'open' | 'closed' | 'cancelled') {
+    const { data, error } = await supabase.rpc('admin_set_session_status', {
+      p_session_id: id,
+      p_status: status,
+    });
+    if (error) return { error };
+    const result = data as any;
+    if (!result?.success) {
+      return { error: { message: result?.message || 'Failed to update session.' } };
+    }
+    return { error: null };
+  },
+
+  async regenerateCode(id: string) {
+    const { data, error } = await supabase.rpc('admin_regenerate_session_code', {
+      p_session_id: id,
+    });
+    if (error) return { data: null, error };
+    const result = data as any;
+    if (!result?.success) {
+      return { data: null, error: { message: result?.message || 'Failed to regenerate code.' } };
+    }
+    return { data: result, error: null };
   },
 
   async deleteSession(id: string) {

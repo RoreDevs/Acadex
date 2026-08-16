@@ -1,28 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, CalendarCheck, Users, AlertTriangle, Download } from 'lucide-react';
+import { TrendingUp, CalendarCheck, Users, BookOpen, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { DataTable } from '@/components/shared/DataTable';
 import { AnalyticsFilters, type FilterOption } from '@/components/analytics/AnalyticsFilters';
 import { TrendChart } from '@/components/analytics/TrendChart';
-import { AlertsPanel } from '@/components/analytics/AlertsPanel';
 import { RateBadge } from '@/components/analytics/AttendanceRateBar';
-import { useAuth } from '@/contexts/AuthContext';
 import { academicPeriodService } from '@/services/academicPeriodService';
 import { analyticsService } from '@/services/analyticsService';
 import { exportToCSV } from '@/utils/export';
-import type { AdminOverview } from '@/types';
+import type { SuperAdminAnalytics } from '@/types';
 import toast from 'react-hot-toast';
 
-export function AdminAnalyticsPage() {
-  const { profile } = useAuth();
+export function SuperAdminAnalyticsPage() {
   const [semesters, setSemesters] = useState<FilterOption[]>([]);
   const [semesterValue, setSemesterValue] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [data, setData] = useState<AdminOverview | null>(null);
+  const [data, setData] = useState<SuperAdminAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,9 +32,8 @@ export function AdminAnalyticsPage() {
   }, []);
 
   const load = useCallback(() => {
-    if (!profile) return;
     setLoading(true);
-    analyticsService.getAdminOverview(
+    analyticsService.getSuperAdminAnalytics(
       semesterValue === 'all' ? undefined : semesterValue,
       startDate || undefined,
       endDate || undefined
@@ -52,9 +48,42 @@ export function AdminAnalyticsPage() {
       })
       .catch(() => toast.error('Failed to load analytics'))
       .finally(() => setLoading(false));
-  }, [profile, semesterValue, startDate, endDate]);
+  }, [semesterValue, startDate, endDate]);
 
   useEffect(() => { load(); }, [load]);
+
+  const programColumns = [
+    {
+      key: 'name',
+      header: 'Program',
+      render: (item: any) => (
+        <div>
+          <span className="font-medium">{item.name}</span>
+          <span className="ml-2 text-gray-400">{item.code}</span>
+        </div>
+      ),
+    },
+    { key: 'students', header: 'Students', render: (item: any) => item.students },
+    { key: 'held', header: 'Sessions', render: (item: any) => item.held },
+    { key: 'attended', header: 'Attended', render: (item: any) => item.attended },
+    {
+      key: 'rate',
+      header: 'Rate',
+      render: (item: any) => (data ? <RateBadge rate={item.rate} threshold={data.threshold} /> : item.rate),
+    },
+  ];
+
+  const levelColumns = [
+    { key: 'level', header: 'Level', render: (item: any) => <span className="font-medium">{item.level || 'N/A'}</span> },
+    { key: 'students', header: 'Students', render: (item: any) => item.students },
+    { key: 'held', header: 'Sessions', render: (item: any) => item.held },
+    { key: 'attended', header: 'Attended', render: (item: any) => item.attended },
+    {
+      key: 'rate',
+      header: 'Rate',
+      render: (item: any) => (data ? <RateBadge rate={item.rate} threshold={data.threshold} /> : item.rate),
+    },
+  ];
 
   const courseColumns = [
     {
@@ -67,7 +96,7 @@ export function AdminAnalyticsPage() {
         </div>
       ),
     },
-    { key: 'enrolled', header: 'Enrolled', render: (item: any) => item.enrolled },
+    { key: 'program_name', header: 'Program', render: (item: any) => item.program_name },
     { key: 'held', header: 'Sessions', render: (item: any) => item.held },
     { key: 'attended', header: 'Attended', render: (item: any) => item.attended },
     {
@@ -75,25 +104,16 @@ export function AdminAnalyticsPage() {
       header: 'Rate',
       render: (item: any) => (data ? <RateBadge rate={item.rate} threshold={data.threshold} /> : item.rate),
     },
-    {
-      key: 'below_threshold',
-      header: 'Below Threshold',
-      render: (item: any) => (
-        <span className={item.below_threshold > 0 ? 'font-medium text-red-600 dark:text-red-400' : 'text-gray-400'}>
-          {item.below_threshold}
-        </span>
-      ),
-    },
   ];
 
-  const belowColumns = [
+  const semesterColumns = [
     {
-      key: 'full_name',
-      header: 'Student',
+      key: 'name',
+      header: 'Semester',
       render: (item: any) => (
         <div>
-          <span className="font-medium">{item.full_name}</span>
-          <span className="ml-2 text-gray-400">{item.index_number}</span>
+          <span className="font-medium">{item.name || 'Not assigned'}</span>
+          {item.year_name && <span className="ml-2 text-gray-400">{item.year_name}</span>}
         </div>
       ),
     },
@@ -112,15 +132,11 @@ export function AdminAnalyticsPage() {
       header: 'Date',
       render: (item: any) => new Date(item.session_date).toLocaleDateString(),
     },
+    { key: 'program_name', header: 'Program', render: (item: any) => item.program_name },
     {
       key: 'course',
       header: 'Course',
       render: (item: any) => <span className="font-medium">{item.course_title}</span>,
-    },
-    {
-      key: 'title',
-      header: 'Session',
-      render: (item: any) => <span>{item.title}</span>,
     },
     { key: 'present', header: 'Present', render: (item: any) => item.present },
     { key: 'late', header: 'Late', render: (item: any) => item.late },
@@ -137,44 +153,23 @@ export function AdminAnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Attendance Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            {profile?.role === 'super_admin'
-              ? 'Overview across all programs'
-              : `Insights for ${profile?.program ? 'your program and level' : 'your program'}`}
-          </p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">System-wide attendance insights</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => {
-            if (!data || data.by_course.length === 0) { toast.error('No course data to export'); return; }
-            exportToCSV(data.by_course.map((c) => ({
-              Code: c.code,
-              Course: c.title,
-              Enrolled: c.enrolled,
-              Sessions: c.held,
-              Attended: c.attended,
-              Rate: c.rate,
-              'Below Threshold': c.below_threshold,
-            })), 'attendance-by-course');
-            toast.success('CSV exported');
-          }}>
-            <Download className="w-4 h-4 mr-2" />
-            By Course
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => {
-            if (!data || data.students_below_threshold.length === 0) { toast.error('No students below threshold'); return; }
-            exportToCSV(data.students_below_threshold.map((s) => ({
-              Student: s.full_name,
-              'Index Number': s.index_number,
-              Sessions: s.held,
-              Attended: s.attended,
-              Rate: s.rate,
-            })), 'students-below-threshold');
-            toast.success('CSV exported');
-          }}>
-            <Download className="w-4 h-4 mr-2" />
-            At Risk
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => {
+          if (!data || data.by_course.length === 0) { toast.error('No course data to export'); return; }
+          exportToCSV(data.by_course.map((c) => ({
+            Code: c.code,
+            Course: c.title,
+            Program: c.program_name,
+            Sessions: c.held,
+            Attended: c.attended,
+            Rate: c.rate,
+          })), 'system-attendance-by-course');
+          toast.success('CSV exported');
+        }}>
+          <Download className="w-4 h-4 mr-2" />
+          Export
+        </Button>
       </div>
 
       <AnalyticsFilters
@@ -216,47 +211,64 @@ export function AdminAnalyticsPage() {
               delay={0.05}
             />
             <StatsCard
-              title="Students Tracked"
+              title="Students"
               value={data.totals.students ?? 0}
               icon={<Users className="w-6 h-6" />}
-              description="In scope for this view"
+              description="Registered students"
               delay={0.1}
             />
             <StatsCard
-              title="Below Threshold"
-              value={data.students_below_threshold.length}
-              icon={<AlertTriangle className="w-6 h-6" />}
-              description={`Below ${data.threshold}% attendance`}
+              title="Courses Tracked"
+              value={data.by_course.length}
+              icon={<BookOpen className="w-6 h-6" />}
+              description="Courses with held sessions"
               delay={0.15}
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Weekly Attendance Trend (12 weeks)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TrendChart data={data.trend} height={300} />
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-base">Weekly Attendance Trend (12 weeks)</CardTitle>
+                <CardTitle className="text-base">Attendance by Program</CardTitle>
               </CardHeader>
               <CardContent>
-                <TrendChart data={data.trend} />
+                {data.by_program.length > 0 ? (
+                  <DataTable columns={programColumns} data={data.by_program} searchable={false} pageSize={8} />
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">No program data available.</p>
+                )}
               </CardContent>
             </Card>
 
-            <AlertsPanel alerts={data.alerts} />
-          </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Attendance by Level</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.by_level.length > 0 ? (
+                  <DataTable columns={levelColumns} data={data.by_level} searchable={false} pageSize={8} />
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">No level data available.</p>
+                )}
+              </CardContent>
+            </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Attendance by Course</CardTitle>
               </CardHeader>
               <CardContent>
                 {data.by_course.length > 0 ? (
-                  <DataTable
-                    columns={courseColumns}
-                    data={data.by_course}
-                    searchable={false}
-                    pageSize={8}
-                  />
+                  <DataTable columns={courseColumns} data={data.by_course} searchable searchPlaceholder="Search courses..." pageSize={8} />
                 ) : (
                   <p className="text-gray-500 dark:text-gray-400 text-center py-8">No course data available.</p>
                 )}
@@ -265,21 +277,13 @@ export function AdminAnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Students Below Threshold</CardTitle>
+                <CardTitle className="text-base">Attendance by Semester</CardTitle>
               </CardHeader>
               <CardContent>
-                {data.students_below_threshold.length > 0 ? (
-                  <DataTable
-                    columns={belowColumns}
-                    data={data.students_below_threshold}
-                    searchable
-                    searchPlaceholder="Search students..."
-                    pageSize={8}
-                  />
+                {data.by_semester.length > 0 ? (
+                  <DataTable columns={semesterColumns} data={data.by_semester} searchable={false} pageSize={8} />
                 ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                    No students below the {data.threshold}% threshold.
-                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">No semester data available.</p>
                 )}
               </CardContent>
             </Card>
@@ -291,12 +295,7 @@ export function AdminAnalyticsPage() {
             </CardHeader>
             <CardContent>
               {data.recent.length > 0 ? (
-                <DataTable
-                  columns={recentColumns}
-                  data={data.recent}
-                  searchable={false}
-                  pageSize={8}
-                />
+                <DataTable columns={recentColumns} data={data.recent} searchable={false} pageSize={8} />
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-8">No recent sessions.</p>
               )}

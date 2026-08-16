@@ -1,20 +1,39 @@
 import { supabase } from '@/lib/supabase';
-import type { Attendance } from '@/types';
+import type { AttendanceStatus } from '@/types';
 
 export const attendanceService = {
-  async markAttendance(studentId: string, sessionId: string) {
-    const { data, error } = await supabase
-      .from('attendance')
-      .insert([
-        {
-          student_id: studentId,
-          session_id: sessionId,
-          status: 'present',
-        },
-      ])
-      .select()
-      .single();
-    return { data: data as Attendance | null, error };
+  async getSessionForMarking(code: string) {
+    const { data, error } = await supabase.rpc('get_session_for_marking', {
+      p_attendance_code: code.toUpperCase(),
+    });
+    if (error) return { result: null, error };
+    return { result: data as any, error: null };
+  },
+
+  async markAttendanceByCode(code: string, coords: { latitude: number; longitude: number }) {
+    const { data, error } = await supabase.rpc('mark_attendance', {
+      p_attendance_code: code.toUpperCase(),
+      p_student_lat: coords.latitude,
+      p_student_lng: coords.longitude,
+    });
+    if (error) return { result: null, error };
+    return { result: data as any, error: null };
+  },
+
+  async adminSetAttendanceStatus(
+    sessionId: string,
+    studentId: string,
+    status: AttendanceStatus,
+    reason: string
+  ) {
+    const { data, error } = await supabase.rpc('admin_set_attendance_status', {
+      p_session_id: sessionId,
+      p_student_id: studentId,
+      p_status: status,
+      p_reason: reason,
+    });
+    if (error) return { result: null, error };
+    return { result: data as any, error: null };
   },
 
   async getAttendanceByStudent(studentId: string) {
@@ -61,7 +80,9 @@ export const attendanceService = {
   async getStudentStats(studentId: string) {
     const [enrolledCourses, attended] = await Promise.all([
       supabase.from('enrollments').select('course_id').eq('student_id', studentId),
-      supabase.from('attendance').select('id', { count: 'exact' }).eq('student_id', studentId),
+      supabase.from('attendance').select('id', { count: 'exact' })
+        .eq('student_id', studentId)
+        .in('status', ['present', 'late']),
     ]);
 
     const courseIds = enrolledCourses.data?.map((e: any) => e.course_id) || [];

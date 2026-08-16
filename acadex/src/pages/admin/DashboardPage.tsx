@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, PlayCircle, TrendingUp, BookOpen, QrCode } from 'lucide-react';
+import { Users, Calendar, PlayCircle, TrendingUp, BookOpen, QrCode, Clock, MapPin } from 'lucide-react';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardService } from '@/services/dashboardService';
+import { timetableService } from '@/services/timetableService';
 import { useProgramName } from '@/hooks/useProgramName';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import type { NextClassData } from '@/types';
 
 export function AdminDashboardPage() {
   const { profile } = useAuth();
@@ -20,6 +22,7 @@ export function AdminDashboardPage() {
     total_attendance: 0,
   });
   const [trendData, setTrendData] = useState<{ date: string; count: number }[]>([]);
+  const [nextClass, setNextClass] = useState<NextClassData | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -31,12 +34,21 @@ export function AdminDashboardPage() {
         ]);
         setStats(s);
         setTrendData(trends);
+        timetableService.getNextClass().then(nc => setNextClass(nc)).catch(() => {});
       } catch (err) {
         console.error('Failed to load admin dashboard', err);
       }
     };
     fetchData();
   }, [profile]);
+
+  const formatTime = (t: string) => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${period}`;
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -52,6 +64,39 @@ export function AdminDashboardPage() {
         <StatsCard title="Courses" value={stats.total_courses} icon={<BookOpen className="w-6 h-6" />} delay={0.3} />
         <StatsCard title="Attendance Rate" value={`${stats.attendance_rate}%`} icon={<TrendingUp className="w-6 h-6" />} delay={0.4} />
       </div>
+
+      {nextClass && (
+        <Card className="border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-primary-600 dark:text-primary-400">Next Class</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {nextClass.course_code} — {nextClass.course_title}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(nextClass.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  {' • '}
+                  {formatTime(nextClass.start_time)} – {formatTime(nextClass.end_time)}
+                  {nextClass.venue && (
+                    <span className="inline-flex items-center gap-1 ml-1">
+                      <MapPin className="w-3 h-3" />{nextClass.venue}
+                    </span>
+                  )}
+                </p>
+                {nextClass.exception_type !== 'REGULAR' && (
+                  <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                    {nextClass.exception_type.replace(/_/g, ' ')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

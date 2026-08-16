@@ -76,6 +76,13 @@ export function AttendancePage() {
       render: (item: any) => item.sessions?.courses?.title || 'N/A',
     },
     {
+      key: 'status',
+      header: 'Status',
+      render: (item: any) => (
+        <span className="capitalize">{item.status || 'present'}</span>
+      ),
+    },
+    {
       key: 'date',
       header: 'Date',
       render: (item: any) => (
@@ -112,6 +119,7 @@ export function AttendancePage() {
               'Index Number': r.profiles?.index_number,
               Session: r.sessions?.title,
               Course: r.sessions?.courses?.title,
+              Status: r.status || 'present',
               Date: new Date(r.timestamp).toLocaleDateString(),
               Time: new Date(r.timestamp).toLocaleTimeString(),
             })), 'attendance-records');
@@ -127,6 +135,7 @@ export function AttendancePage() {
               'Index Number': r.profiles?.index_number,
               Session: r.sessions?.title,
               Course: r.sessions?.courses?.title,
+              Status: r.status || 'present',
               Date: new Date(r.timestamp).toLocaleDateString(),
               Time: new Date(r.timestamp).toLocaleTimeString(),
             })), 'attendance-records');

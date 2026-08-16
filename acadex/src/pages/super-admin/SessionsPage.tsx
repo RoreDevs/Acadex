@@ -40,11 +40,16 @@ export function SuperAdminSessionsPage() {
     { key: 'attendance_code', header: 'Code', render: (item: any) => (
       <code className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-xs font-mono">{item.attendance_code}</code>
     )},
-    { key: 'is_active', header: 'Status', render: (item: any) => (
-      <Badge variant={item.is_active ? 'success' : 'outline'}>
-        {item.is_active ? 'Active' : 'Ended'}
-      </Badge>
-    )},
+    { key: 'status', header: 'Status', render: (item: any) => {
+      const meta: Record<string, { label: string; variant: 'default' | 'success' | 'outline' | 'danger' }> = {
+        scheduled: { label: 'Scheduled', variant: 'default' },
+        open: { label: 'Open', variant: 'success' },
+        closed: { label: 'Closed', variant: 'outline' },
+        cancelled: { label: 'Cancelled', variant: 'danger' },
+      };
+      const m = meta[item.status] || meta.scheduled;
+      return <Badge variant={m.variant}>{m.label}</Badge>;
+    }},
   ];
 
   return (
@@ -63,7 +68,7 @@ export function SuperAdminSessionsPage() {
             'Start Time': s.start_time,
             'End Time': s.end_time,
             Code: s.attendance_code,
-            Status: s.is_active ? 'Active' : 'Ended',
+            Status: s.status || (s.is_active ? 'Active' : 'Ended'),
           })), 'all-sessions');
           toast.success('CSV exported');
         }}>Export CSV</Button>

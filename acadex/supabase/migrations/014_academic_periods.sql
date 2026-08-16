@@ -172,10 +172,10 @@ ALTER TABLE course_offerings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "view_academic_years" ON academic_years;
 CREATE POLICY "view_academic_years" ON academic_years FOR SELECT USING (TRUE);
 
-DROP POLICY IF EXISTS "view_semesters" ON semesters FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "view_semesters" ON semesters;
 CREATE POLICY "view_semesters" ON semesters FOR SELECT USING (TRUE);
 
-DROP POLICY IF EXISTS "view_course_offerings" ON course_offerings FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "view_course_offerings" ON course_offerings;
 CREATE POLICY "view_course_offerings" ON course_offerings FOR SELECT USING (TRUE);
 
 -- Academic periods are managed ONLY by super admins.
@@ -374,8 +374,10 @@ BEGIN
 
   IF v_legacy_semester_id IS NOT NULL THEN
     -- Offerings for every existing course (guarding against NULL program_id).
-    INSERT INTO course_offerings (course_id, semester_id, program_id, level, course_rep_id, is_active)
-    SELECT c.id, v_legacy_semester_id, c.program_id, c.level, c.course_rep_id, TRUE
+    -- NOTE: course_rep_id is left NULL (some deployments' `courses` table has
+    -- no course_rep_id column); it can be assigned later in the UI.
+    INSERT INTO course_offerings (course_id, semester_id, program_id, level, is_active)
+    SELECT c.id, v_legacy_semester_id, c.program_id, c.level, TRUE
     FROM courses c
     WHERE c.program_id IS NOT NULL
     ON CONFLICT DO NOTHING;

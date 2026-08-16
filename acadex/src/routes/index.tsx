@@ -17,11 +17,14 @@ const SuperAdminRegisterPage = lazyLoad(() => import('@/pages/auth/SuperAdminReg
 const StudentDashboardPage = lazyLoad(() => import('@/pages/student/DashboardPage'), 'StudentDashboardPage');
 const ProfilePage = lazyLoad(() => import('@/pages/student/ProfilePage'), 'ProfilePage');
 const MarkAttendancePage = lazyLoad(() => import('@/pages/student/MarkAttendancePage'), 'MarkAttendancePage');
+const AttendanceLinkPage = lazyLoad(() => import('@/pages/student/AttendanceLinkPage'), 'AttendanceLinkPage');
 const RecordsPage = lazyLoad(() => import('@/pages/student/RecordsPage'), 'RecordsPage');
+const StudentAnalyticsPage = lazyLoad(() => import('@/pages/student/AnalyticsPage'), 'StudentAnalyticsPage');
 const CoursesPage = lazyLoad(() => import('@/pages/student/CoursesPage'), 'CoursesPage');
 const StudentSlidesPage = lazyLoad(() => import('@/pages/student/StudentSlidesPage'), 'StudentSlidesPage');
 const StudentAssignmentsPage = lazyLoad(() => import('@/pages/student/StudentAssignmentsPage'), 'StudentAssignmentsPage');
 const StudentNotificationsPage = lazyLoad(() => import('@/pages/student/NotificationsPage'), 'NotificationsPage');
+const StudentTimetablePage = lazyLoad(() => import('@/pages/student/TimetablePage'), 'StudentTimetablePage');
 
 // Admin Pages
 const AdminDashboardPage = lazyLoad(() => import('@/pages/admin/DashboardPage'), 'AdminDashboardPage');
@@ -33,6 +36,7 @@ const AdminSlidesPage = lazyLoad(() => import('@/pages/admin/AdminSlidesPage'), 
 const AdminAssignmentsPage = lazyLoad(() => import('@/pages/admin/AdminAssignmentsPage'), 'AdminAssignmentsPage');
 const AdminAnalyticsPage = lazyLoad(() => import('@/pages/admin/AnalyticsPage'), 'AdminAnalyticsPage');
 const AdminStudentsPage = lazyLoad(() => import('@/pages/admin/StudentsPage'), 'AdminStudentsPage');
+const AdminTimetablePage = lazyLoad(() => import('@/pages/admin/TimetablePage'), 'AdminTimetablePage');
 
 // Super Admin Pages
 const SuperAdminDashboardPage = lazyLoad(() => import('@/pages/super-admin/DashboardPage'), 'SuperAdminDashboardPage');
@@ -48,6 +52,7 @@ const SuperAdminAssignmentsPage = lazyLoad(() => import('@/pages/super-admin/Sup
 const SuperAdminNotificationsPage = lazyLoad(() => import('@/pages/super-admin/NotificationsPage'), 'NotificationsPage');
 const AuditLogPage = lazyLoad(() => import('@/pages/super-admin/AuditLogPage'), 'AuditLogPage');
 const AcademicPeriodsPage = lazyLoad(() => import('@/pages/super-admin/AcademicPeriodsPage'), 'AcademicPeriodsPage');
+const SuperAdminAnalyticsPage = lazyLoad(() => import('@/pages/super-admin/AnalyticsPage'), 'SuperAdminAnalyticsPage');
 
 const S = (Component: React.LazyExoticComponent<any>) => (
   <Suspense fallback={<LoadingScreen />}><Component /></Suspense>
@@ -72,11 +77,14 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: S(StudentDashboardPage) },
       { path: 'profile', element: S(ProfilePage) },
       { path: 'mark-attendance', element: S(MarkAttendancePage) },
+      { path: 'attendance/:code', element: S(AttendanceLinkPage) },
       { path: 'records', element: S(RecordsPage) },
+      { path: 'analytics', element: S(StudentAnalyticsPage) },
       { path: 'courses', element: S(CoursesPage) },
       { path: 'slides', element: S(StudentSlidesPage) },
       { path: 'assignments', element: S(StudentAssignmentsPage) },
       { path: 'notifications', element: S(StudentNotificationsPage) },
+      { path: 'timetable', element: S(StudentTimetablePage) },
       { path: 'admin/dashboard', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminDashboardPage)}</RouteGuard> },
       { path: 'admin/generate-session', element: <RouteGuard roles={['admin', 'super_admin']}>{S(GenerateSessionPage)}</RouteGuard> },
       { path: 'admin/sessions', element: <RouteGuard roles={['admin', 'super_admin']}>{S(SessionManagementPage)}</RouteGuard> },
@@ -86,6 +94,7 @@ export const router = createBrowserRouter([
       { path: 'admin/assignments', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminAssignmentsPage)}</RouteGuard> },
       { path: 'admin/analytics', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminAnalyticsPage)}</RouteGuard> },
       { path: 'admin/students', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminStudentsPage)}</RouteGuard> },
+      { path: 'admin/timetable', element: <RouteGuard roles={['admin', 'super_admin']}>{S(AdminTimetablePage)}</RouteGuard> },
     ],
   },
   {
@@ -105,6 +114,7 @@ export const router = createBrowserRouter([
       { path: 'notifications', element: S(SuperAdminNotificationsPage) },
       { path: 'audit', element: S(AuditLogPage) },
       { path: 'academic', element: S(AcademicPeriodsPage) },
+      { path: 'analytics', element: S(SuperAdminAnalyticsPage) },
     ],
   },
 ]);

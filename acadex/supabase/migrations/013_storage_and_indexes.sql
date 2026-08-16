@@ -30,13 +30,15 @@ DROP POLICY IF EXISTS "assignments public read" ON storage.objects;
 CREATE POLICY "assignments public read" ON storage.objects FOR SELECT
   USING (bucket_id = 'assignments');
 
-DROP POLICY IF EXISTS "assignments admin write" ON storage.objects FOR INSERT
+DROP POLICY IF EXISTS "assignments admin write" ON storage.objects;
+CREATE POLICY "assignments admin write" ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'assignments'
     AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
   );
 
-DROP POLICY IF EXISTS "assignments admin delete" ON storage.objects FOR DELETE
+DROP POLICY IF EXISTS "assignments admin delete" ON storage.objects;
+CREATE POLICY "assignments admin delete" ON storage.objects FOR DELETE
   USING (
     bucket_id = 'assignments'
     AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))

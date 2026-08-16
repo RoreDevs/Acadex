@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Filter, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { Download, Filter, Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,12 +61,20 @@ export function RecordsPage() {
     {
       key: 'status',
       header: 'Status',
-      render: (item: any) => (
-        <Badge variant="success">
-          <CheckCircle className="w-3 h-3 mr-1" />
-          Present
-        </Badge>
-      ),
+      render: (item: any) => {
+        const meta: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' | 'default' | 'outline' }> = {
+          present: { label: 'Present', variant: 'success' },
+          late: { label: 'Late', variant: 'warning' },
+          absent: { label: 'Absent', variant: 'danger' },
+          excused: { label: 'Excused', variant: 'default' },
+        };
+        const m = meta[item.status] || { label: item.status || 'Present', variant: 'outline' as const };
+        return (
+          <Badge variant={m.variant}>
+            {m.label}
+          </Badge>
+        );
+      },
     },
   ];
 
@@ -86,7 +94,7 @@ export function RecordsPage() {
                 Course: r.sessions?.courses?.title || 'N/A',
                 Session: r.sessions?.title || 'N/A',
                 Time: new Date(r.timestamp).toLocaleTimeString(),
-                Status: 'Present',
+                Status: r.status || 'Present',
               })),
               'attendance-records'
             );
@@ -103,7 +111,7 @@ export function RecordsPage() {
                 Course: r.sessions?.courses?.title || 'N/A',
                 Session: r.sessions?.title || 'N/A',
                 Time: new Date(r.timestamp).toLocaleTimeString(),
-                Status: 'Present',
+                Status: r.status || 'Present',
               })),
               'attendance-records',
               'My Attendance Records',
