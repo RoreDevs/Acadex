@@ -62,7 +62,7 @@ export function StudentAnalyticsPage() {
         }
         setData(result);
       })
-      .catch(() => toast.error('Failed to load analytics'))
+      .catch((err) => toast.error(`Analytics error: ${err?.message || err}`))
       .finally(() => setLoading(false));
   }, [profile, semesterValue, courseValue]);
 
