@@ -31,7 +31,7 @@ export function StudentDashboardPage() {
           attendanceService.getAttendanceByStudent(profile.id),
           sessionService.getUpcomingSessions(5),
           courseService.getCoursesByProgram(profile.program!, profile.level!),
-          timetableService.getNextClass(),
+          timetableService.getNextClass().catch(() => null),
         ]);
         setStats({ ...s, total_courses: courses.length });
         setRecentAttendance(att.slice(0, 5));
