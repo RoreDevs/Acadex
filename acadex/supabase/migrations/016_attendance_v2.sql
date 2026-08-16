@@ -369,7 +369,7 @@ BEGIN
   IF auth.uid() IS NOT NULL THEN
     SELECT EXISTS (
       SELECT 1 FROM enrollments e
-      WHERE e.student_id = auth.uid() AND e.course_id = v_session.course_id
+      WHERE e.st-udent_id = auth.uid() AND e.course_id = v_session.course_id
     ) INTO v_enrolled;
 
     SELECT EXISTS (

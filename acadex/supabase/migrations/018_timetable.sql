@@ -95,18 +95,9 @@ CREATE INDEX IF NOT EXISTS idx_schedule_audit_log_schedule
   ON schedule_audit_log(schedule_id);
 
 -- ============================================================
--- 4. Trigger: set_updated_at
+-- 4. updated_at triggers for new tables only
+--    DO NOT drop set_updated_at() — it cascades to attendance/sessions/etc.
 -- ============================================================
-DROP FUNCTION IF EXISTS set_updated_at() CASCADE;
-CREATE FUNCTION set_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Recreate trigger on recurring_schedules (IF NOT EXISTS not available for triggers)
 DROP TRIGGER IF EXISTS trg_recurring_schedules_updated_at ON recurring_schedules;
 CREATE TRIGGER trg_recurring_schedules_updated_at
   BEFORE UPDATE ON recurring_schedules
