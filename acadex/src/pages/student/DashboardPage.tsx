@@ -27,10 +27,10 @@ export function StudentDashboardPage() {
     const fetchData = async () => {
       try {
         const [s, att, sessions, courses, nc] = await Promise.all([
-          attendanceService.getStudentStats(profile.id),
-          attendanceService.getAttendanceByStudent(profile.id),
-          sessionService.getUpcomingSessions(5),
-          courseService.getCoursesByProgram(profile.program!, profile.level!),
+          attendanceService.getStudentStats(profile.id).catch(() => ({ attendance_rate: 0, classes_attended: 0, total_courses: 0, total_sessions: 0 })),
+          attendanceService.getAttendanceByStudent(profile.id).catch(() => []),
+          sessionService.getUpcomingSessions(5).catch(() => []),
+          courseService.getCoursesByProgram(profile.program!, profile.level!).catch(() => []),
           timetableService.getNextClass().catch(() => null),
         ]);
         setStats({ ...s, total_courses: courses.length });
