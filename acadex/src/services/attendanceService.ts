@@ -49,7 +49,7 @@ export const attendanceService = {
   async getAttendanceBySession(sessionId: string) {
     const { data, error } = await supabase
       .from('attendance')
-      .select('*, profiles!inner(full_name, index_number)')
+      .select('*')
       .eq('session_id', sessionId)
       .order('timestamp');
     if (error) console.error('getAttendanceBySession error:', error.message);
@@ -108,7 +108,7 @@ export const attendanceService = {
   async getAllAttendanceRecords() {
     const { data, error } = await supabase
       .from('attendance')
-      .select('*, sessions(title, session_date, courses(title, code)), profiles!inner(full_name, index_number)')
+      .select('*, sessions(title, session_date, courses(title, code))')
       .order('timestamp', { ascending: false });
     if (error) console.error('getAllAttendanceRecords error:', error.message);
     return (data || []) as any[];
