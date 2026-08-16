@@ -12,7 +12,11 @@ export const analyticsService = {
       p_semester_id: semesterId || null,
       p_course_id: courseId || null,
     });
-    if (error) throw error;
+    if (error) {
+      console.error('[analyticsService] getStudentAnalytics RPC error:', error);
+      throw error;
+    }
+    console.log('[analyticsService] getStudentAnalytics result:', JSON.stringify(data).slice(0, 200));
     return data as StudentAnalytics;
   },
 
