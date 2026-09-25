@@ -92,8 +92,8 @@ export function StudentTimetablePage() {
       const end = new Date(weekStart);
       end.setDate(end.getDate() + 6);
       const [data, nc] = await Promise.all([
-        timetableService.getTimetableRange(formatDate(weekStart), formatDate(end)),
-        timetableService.getNextClass(),
+        timetableService.getTimetableRange(formatDate(weekStart), formatDate(end)).catch(() => []),
+        timetableService.getNextClass().catch(() => null),
       ]);
       setOccurrences(data);
       setNextClass(nc);
