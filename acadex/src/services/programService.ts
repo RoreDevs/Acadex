@@ -7,8 +7,7 @@ export const programService = {
       .from('programs')
       .select('*')
       .order('name');
-    if (error) console.error('getPrograms error:', JSON.stringify(error, null, 2));
-    console.log('getPrograms result:', data);
+    if (error) console.error('getPrograms error:', error.message);
     return (data || []) as Program[];
   },
 

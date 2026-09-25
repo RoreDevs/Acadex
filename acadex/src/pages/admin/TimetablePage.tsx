@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { friendlyErrorMessage } from '@/lib/utils';
 import { courseService } from '@/services/courseService';
 import { academicPeriodService } from '@/services/academicPeriodService';
 import { timetableService } from '@/services/timetableService';
@@ -156,7 +157,7 @@ export function AdminTimetablePage() {
       resetScheduleForm();
       await loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save schedule');
+      toast.error(friendlyErrorMessage(err, 'Failed to save schedule'));
     } finally {
       setFormLoading(false);
     }
@@ -205,7 +206,7 @@ export function AdminTimetablePage() {
       setShowExceptionForm(false);
       await loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create exception');
+      toast.error(friendlyErrorMessage(err, 'Failed to create exception'));
     } finally {
       setExcFormLoading(false);
     }
@@ -229,7 +230,7 @@ export function AdminTimetablePage() {
       setDeleteTarget(null);
       await loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete schedule');
+      toast.error(friendlyErrorMessage(err, 'Failed to delete schedule'));
     }
   };
 

@@ -55,8 +55,8 @@ DECLARE
   v_windows JSONB;
 BEGIN
   SELECT get_user_role() INTO v_role;
-  IF v_role IS NULL OR v_role <> 'student' THEN
-    RETURN jsonb_build_object('success', false, 'error', 'FORBIDDEN', 'message', 'Only students can view attendance analytics.');
+  IF v_role IS NULL OR v_role NOT IN ('student', 'admin', 'super_admin') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'FORBIDDEN', 'message', 'Insufficient permissions to view attendance analytics.');
   END IF;
 
   v_threshold := COALESCE((SELECT value::INTEGER FROM settings WHERE key = 'attendance_threshold_percent'), 75);

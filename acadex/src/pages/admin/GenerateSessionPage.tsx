@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { friendlyErrorMessage } from '@/lib/utils';
 import { useCurrentAcademicPeriod } from '@/contexts/AcademicPeriodContext';
 import { courseService } from '@/services/courseService';
 import { academicPeriodService } from '@/services/academicPeriodService';
@@ -133,7 +134,7 @@ export function GenerateSessionPage() {
 
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error, 'Failed to create session'));
     } else {
       toast.success('Session created successfully!');
       navigate('/admin/sessions');

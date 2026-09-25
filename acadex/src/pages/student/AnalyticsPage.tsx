@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { academicPeriodService } from '@/services/academicPeriodService';
 import { courseService } from '@/services/courseService';
 import { analyticsService } from '@/services/analyticsService';
+import { friendlyErrorMessage } from '@/lib/utils';
 import { exportToCSV } from '@/utils/export';
 import type { AnalyticsAlert, StudentAnalytics } from '@/types';
 import toast from 'react-hot-toast';
@@ -62,7 +63,7 @@ export function StudentAnalyticsPage() {
         }
         setData(result);
       })
-      .catch((err) => toast.error(`Analytics error: ${err?.message || err}`))
+      .catch((err) => toast.error(friendlyErrorMessage(err, 'Failed to load analytics')))
       .finally(() => setLoading(false));
   }, [profile, semesterValue, courseValue]);
 

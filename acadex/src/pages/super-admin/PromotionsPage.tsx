@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { programService } from '@/services/programService';
 import { profileService } from '@/services/profileService';
 import { useAuth } from '@/contexts/AuthContext';
+import { friendlyErrorMessage } from '@/lib/utils';
 import { auditService } from '@/services/auditService';
 import toast from 'react-hot-toast';
 
@@ -53,7 +54,7 @@ export function PromotionsPage() {
 
     const { error } = await profileService.promoteLevel(selectedProgram, selectedLevel, newLevel);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error, 'Failed to promote students'));
     } else {
       toast.success(`${students.length} students promoted to ${newLevel}!`);
       if (profile) {
