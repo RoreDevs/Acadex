@@ -130,7 +130,27 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_prog RECORD;
 BEGIN
+  -- Enforce index-number format per programme type so outsiders cannot
+  -- register with made-up index numbers. Unknown programme types are
+  -- allowed through (frontend still guides the format).
+  IF p_program ~ '^[0-9a-fA-F-]{36}$' THEN
+    SELECT * INTO v_prog FROM programs WHERE id = p_program::uuid;
+    IF FOUND THEN
+      IF v_prog.code ILIKE '%BTECH%' OR v_prog.name ILIKE '%BTECH%' THEN
+        IF BTRIM(COALESCE(p_index_number, '')) !~* '^B[0-9]{9}$' THEN
+          RAISE EXCEPTION 'Invalid index number for a BTECH programme. It should look like B123456789 (letter B followed by 9 digits).';
+        END IF;
+      ELSIF v_prog.code ILIKE '%HND%' OR v_prog.name ILIKE '%HND%' THEN
+        IF BTRIM(COALESCE(p_index_number, '')) !~* '^[A-Z0-9]{2}/20[0-9]{2}/[0-9]{4}D$' THEN
+          RAISE EXCEPTION 'Invalid index number for an HND programme. It should look like IT/2024/0123D.';
+        END IF;
+      END IF;
+    END IF;
+  END IF;
+
   INSERT INTO profiles (id, email, full_name, index_number, program, level, role)
   VALUES (p_user_id, p_email, p_full_name, p_index_number, p_program, p_level, 'student');
 END;
