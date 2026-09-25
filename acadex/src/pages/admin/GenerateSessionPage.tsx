@@ -26,10 +26,6 @@ const sessionSchema = z.object({
   start_time: z.string().min(1, 'Please select start time'),
   end_time: z.string().min(1, 'Please select end time'),
   venue: z.string().optional(),
-  attendance_open_time: z.string().optional(),
-  attendance_close_time: z.string().optional(),
-  late_threshold_minutes: z.string().optional(),
-  location_radius_meters: z.string().optional(),
 });
 
 type SessionForm = z.infer<typeof sessionSchema>;
@@ -135,10 +131,6 @@ export function GenerateSessionPage() {
       semester_id: semesterId,
       course_offering_id: offeringId,
       venue: data.venue?.trim() || undefined,
-      attendance_open_time: data.attendance_open_time || undefined,
-      attendance_close_time: data.attendance_close_time || undefined,
-      late_threshold_minutes: data.late_threshold_minutes ? Number(data.late_threshold_minutes) : undefined,
-      location_radius_meters: data.location_radius_meters ? Number(data.location_radius_meters) : undefined,
     });
 
     setLoading(false);
@@ -220,32 +212,6 @@ export function GenerateSessionPage() {
             <div className="space-y-2">
               <Label htmlFor="venue">Venue (Optional)</Label>
               <Input id="venue" placeholder="e.g., LT 24, Sciences Block B" {...register('venue')} />
-            </div>
-
-            <div className="space-y-3">
-              <Label>Advanced Attendance Settings (Optional)</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="attendance_open_time">Attendance Opens At</Label>
-                  <Input id="attendance_open_time" type="time" {...register('attendance_open_time')} />
-                  <p className="text-xs text-gray-400">Defaults to 10 minutes before start.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="attendance_close_time">Attendance Closes At</Label>
-                  <Input id="attendance_close_time" type="time" {...register('attendance_close_time')} />
-                  <p className="text-xs text-gray-400">Defaults to the end time.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="late_threshold_minutes">Late After (minutes)</Label>
-                  <Input id="late_threshold_minutes" type="number" min={0} placeholder="15" {...register('late_threshold_minutes')} />
-                  <p className="text-xs text-gray-400">Markings after this point count as Late.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location_radius_meters">Location Radius (meters)</Label>
-                  <Input id="location_radius_meters" type="number" min={0} placeholder="500" {...register('location_radius_meters')} />
-                  <p className="text-xs text-gray-400">Overrides the global classroom radius.</p>
-                </div>
-              </div>
             </div>
 
             <div className="space-y-3">
