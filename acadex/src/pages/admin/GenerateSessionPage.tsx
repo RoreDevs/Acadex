@@ -25,7 +25,6 @@ const sessionSchema = z.object({
   session_date: z.string().min(1, 'Please select a date'),
   start_time: z.string().min(1, 'Please select start time'),
   end_time: z.string().min(1, 'Please select end time'),
-  venue: z.string().optional(),
 });
 
 type SessionForm = z.infer<typeof sessionSchema>;
@@ -130,7 +129,6 @@ export function GenerateSessionPage() {
       longitude: classroomLocation?.longitude,
       semester_id: semesterId,
       course_offering_id: offeringId,
-      venue: data.venue?.trim() || undefined,
     });
 
     setLoading(false);
@@ -207,11 +205,6 @@ export function GenerateSessionPage() {
                 <Label htmlFor="end_time">End Time</Label>
                 <Input id="end_time" type="time" {...register('end_time')} error={errors.end_time?.message} />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="venue">Venue (Optional)</Label>
-              <Input id="venue" placeholder="e.g., LT 24, Sciences Block B" {...register('venue')} />
             </div>
 
             <div className="space-y-3">
