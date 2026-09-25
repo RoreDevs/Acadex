@@ -120,4 +120,12 @@ export const timetableService = {
     if (error) throw error;
     if (!data?.success) throw new Error(data?.error || 'Failed to delete exception');
   },
+
+  async adminDeleteSchedule(scheduleId: string): Promise<void> {
+    const { data, error } = await supabase.rpc('admin_delete_schedule', {
+      p_schedule_id: scheduleId,
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'Failed to delete schedule');
+  },
 };

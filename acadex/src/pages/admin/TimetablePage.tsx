@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { courseService } from '@/services/courseService';
 import { academicPeriodService } from '@/services/academicPeriodService';
 import { timetableService } from '@/services/timetableService';
@@ -70,6 +71,7 @@ export function AdminTimetablePage() {
   const [excFormLoading, setExcFormLoading] = useState(false);
 
   const [expandedSchedule, setExpandedSchedule] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RecurringSchedule | null>(null);
 
   const loadData = useCallback(async () => {
     if (!profile) return;
@@ -219,6 +221,18 @@ export function AdminTimetablePage() {
     }
   };
 
+  const deleteSchedule = async () => {
+    if (!deleteTarget) return;
+    try {
+      await timetableService.adminDeleteSchedule(deleteTarget.id);
+      toast.success('Schedule deleted');
+      setDeleteTarget(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete schedule');
+    }
+  };
+
   const requiresNewDate = excFormType === 'RESCHEDULED' || excFormType === 'SPECIAL_SESSION';
   const requiresNewVenue = excFormType === 'VENUE_CHANGED' || excFormType === 'RESCHEDULED' || excFormType === 'SPECIAL_SESSION';
   const requiresNewTime = excFormType === 'TIME_CHANGED' || excFormType === 'RESCHEDULED' || excFormType === 'SPECIAL_SESSION';
@@ -307,6 +321,9 @@ export function AdminTimetablePage() {
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditSchedule(s)}>
                         <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(s)} title="Delete schedule">
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
                       <Button variant="ghost" size="icon"
                         onClick={() => setExpandedSchedule(isExpanded ? null : s.id)}>
@@ -463,6 +480,17 @@ export function AdminTimetablePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Schedule"
+        description={deleteTarget
+          ? `Permanently delete the ${deleteTarget.course_code || 'schedule'} class on ${DAY_NAMES[deleteTarget.day_of_week]} (${deleteTarget.start_time?.substring(0, 5)} – ${deleteTarget.end_time?.substring(0, 5)})? All of its exceptions will also be removed. This cannot be undone.`
+          : ''}
+        onConfirm={deleteSchedule}
+        confirmText="Delete Schedule"
+        confirmVariant="destructive"
+      />
     </motion.div>
   );
 }
