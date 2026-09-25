@@ -28,21 +28,12 @@ type RegisterForm = z.infer<typeof registerSchema>;
 const LEVELS = ['Level 100', 'Level 200', 'Level 300', 'Level 400'];
 
 // Index-number format enforced per programme type so outsiders cannot
-// register with made-up index numbers.
-function getProgramIndexRule(program?: { name: string; code: string } | null) {
+// register with made-up index numbers. The expected format is never
+// revealed to the user.
+function getProgramIndexPattern(program?: { name: string; code: string } | null) {
   const text = `${program?.name || ''} ${program?.code || ''}`.toUpperCase();
-  if (text.includes('BTECH')) {
-    return {
-      pattern: /^B\d{9}$/i,
-      hint: 'BTECH index numbers look like B123456789 (letter B followed by 9 digits).',
-    };
-  }
-  if (text.includes('HND')) {
-    return {
-      pattern: /^[A-Z0-9]{2}\/20\d{2}\/\d{4}D$/i,
-      hint: 'HND index numbers look like IT/2024/0123D.',
-    };
-  }
+  if (text.includes('BTECH')) return /^B\d{9}$/i;
+  if (text.includes('HND')) return /^[A-Z0-9]{2}\/20\d{2}\/\d{4}D$/i;
   return null;
 }
 
@@ -61,22 +52,18 @@ export function RegisterPage() {
     register,
     handleSubmit,
     setValue,
-    watch,
     setError,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
-  const selectedProgram = programs.find((p) => p.id === watch('program'));
-  const indexRule = getProgramIndexRule(selectedProgram);
-
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
-    const rule = getProgramIndexRule(programs.find((p) => p.id === data.program));
+    const pattern = getProgramIndexPattern(programs.find((p) => p.id === data.program));
     const indexNumber = data.index_number.trim();
-    if (rule && !rule.pattern.test(indexNumber)) {
-      setError('index_number', { type: 'pattern', message: rule.hint });
+    if (pattern && !pattern.test(indexNumber)) {
+      setError('index_number', { type: 'pattern', message: 'Invalid index number.' });
       setLoading(false);
       return;
     }
@@ -137,9 +124,6 @@ export function RegisterPage() {
               {...register('index_number')}
               error={errors.index_number?.message}
             />
-            {indexRule && !errors.index_number && (
-              <p className="mt-1.5 text-xs text-gray-400">{indexRule.hint}</p>
-            )}
           </div>
 
           <div className="space-y-2">

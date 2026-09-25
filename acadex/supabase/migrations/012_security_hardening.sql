@@ -141,11 +141,11 @@ BEGIN
     IF FOUND THEN
       IF v_prog.code ILIKE '%BTECH%' OR v_prog.name ILIKE '%BTECH%' THEN
         IF BTRIM(COALESCE(p_index_number, '')) !~* '^B[0-9]{9}$' THEN
-          RAISE EXCEPTION 'Invalid index number for a BTECH programme. It should look like B123456789 (letter B followed by 9 digits).';
+          RAISE EXCEPTION 'Invalid index number.';
         END IF;
       ELSIF v_prog.code ILIKE '%HND%' OR v_prog.name ILIKE '%HND%' THEN
         IF BTRIM(COALESCE(p_index_number, '')) !~* '^[A-Z0-9]{2}/20[0-9]{2}/[0-9]{4}D$' THEN
-          RAISE EXCEPTION 'Invalid index number for an HND programme. It should look like IT/2024/0123D.';
+          RAISE EXCEPTION 'Invalid index number.';
         END IF;
       END IF;
     END IF;
