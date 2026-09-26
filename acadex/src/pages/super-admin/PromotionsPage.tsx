@@ -66,7 +66,9 @@ export function PromotionsPage() {
         );
       }
       setConfirmOpen(false);
-      loadStudents();
+      // Move the view to the new level so the promoted class is shown
+      // immediately (the loader effect refetches for the new selection).
+      setSelectedLevel(newLevel);
     }
   };
 
