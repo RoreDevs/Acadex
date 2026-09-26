@@ -174,6 +174,16 @@ export interface CourseOffering {
   programs?: { id: string; name: string };
 }
 
+export interface CurriculumCourse {
+  id: string;
+  program_id: string;
+  level: string;
+  semester_number: number;
+  course_id: string;
+  created_at: string;
+  courses?: Course;
+}
+
 export interface CurrentAcademicPeriod {
   year: AcademicYear | null;
   semester: Semester | null;

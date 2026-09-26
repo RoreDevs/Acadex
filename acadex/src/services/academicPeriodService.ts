@@ -199,4 +199,14 @@ export const academicPeriodService = {
 
     return (created as CourseOffering | undefined) ?? null;
   },
+
+  // Materialize missing semester offerings from the reusable curriculum
+  // (migration 019). Insert-only server-side; safe to call on page load.
+  async ensureSemesterOfferings(semesterId: string): Promise<number> {
+    const { data, error } = await supabase.rpc('ensure_semester_offerings', {
+      p_semester_id: semesterId,
+    });
+    if (error || !data?.success) return 0;
+    return (data.created as number) || 0;
+  },
 };

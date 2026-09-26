@@ -5,7 +5,7 @@ import {
   LayoutDashboard, User, QrCode, ClipboardList, BookOpen,
   LogOut, Menu, X, ChevronLeft, GraduationCap, Shield,
   Users, Calendar, Settings, BarChart3, Globe, Bell,
-  Layers, FileText, Activity, Presentation, ListChecks, CalendarRange
+  Layers, FileText, Activity, Presentation, ListChecks, CalendarRange, Library
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Admins', icon: <Shield className="w-5 h-5" />, href: '/super-admin/admins' },
     { label: 'Programs', icon: <Layers className="w-5 h-5" />, href: '/super-admin/programs' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/super-admin/courses' },
+    { label: 'Curriculum', icon: <Library className="w-5 h-5" />, href: '/super-admin/curriculum' },
     { label: 'Sessions', icon: <Calendar className="w-5 h-5" />, href: '/super-admin/sessions' },
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/super-admin/attendance' },
     { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/super-admin/analytics' },

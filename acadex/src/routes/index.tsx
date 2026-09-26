@@ -44,6 +44,7 @@ const StudentManagementPage = lazyLoad(() => import('@/pages/super-admin/Student
 const AdminManagementPage = lazyLoad(() => import('@/pages/super-admin/AdminManagementPage'), 'AdminManagementPage');
 const ProgramManagementPage = lazyLoad(() => import('@/pages/super-admin/ProgramManagementPage'), 'ProgramManagementPage');
 const CourseManagementPage = lazyLoad(() => import('@/pages/super-admin/CourseManagementPage'), 'CourseManagementPage');
+const CurriculumPage = lazyLoad(() => import('@/pages/super-admin/CurriculumPage'), 'CurriculumPage');
 const SuperAdminSessionsPage = lazyLoad(() => import('@/pages/super-admin/SessionsPage'), 'SuperAdminSessionsPage');
 const PromotionsPage = lazyLoad(() => import('@/pages/super-admin/PromotionsPage'), 'PromotionsPage');
 const AttendancePage = lazyLoad(() => import('@/pages/super-admin/AttendancePage'), 'AttendancePage');
@@ -106,6 +107,7 @@ export const router = createBrowserRouter([
       { path: 'admins', element: S(AdminManagementPage) },
       { path: 'programs', element: S(ProgramManagementPage) },
       { path: 'courses', element: S(CourseManagementPage) },
+      { path: 'curriculum', element: S(CurriculumPage) },
       { path: 'sessions', element: S(SuperAdminSessionsPage) },
       { path: 'promotions', element: S(PromotionsPage) },
       { path: 'attendance', element: S(AttendancePage) },

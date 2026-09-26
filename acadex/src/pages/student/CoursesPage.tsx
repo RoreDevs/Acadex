@@ -4,27 +4,54 @@ import { BookOpen, Code, UserCheck, GraduationCap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentAcademicPeriod } from '@/contexts/AcademicPeriodContext';
 import { courseService } from '@/services/courseService';
+import { academicPeriodService } from '@/services/academicPeriodService';
 import toast from 'react-hot-toast';
 
 export function CoursesPage() {
   const { profile } = useAuth();
+  const { currentSemester, currentYear } = useCurrentAcademicPeriod();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!profile || !profile.program || !profile.level) return;
-    courseService.getCoursesByProgram(profile.program, profile.level)
-      .then((data) => setCourses(data))
-      .catch(() => toast.error('Failed to load courses'))
-      .finally(() => setLoading(false));
-  }, [profile]);
+    const program = profile.program;
+    const level = profile.level;
+    (async () => {
+      try {
+        // Current-semester curriculum first: program + level + semester
+        // number resolve automatically for each academic year.
+        const semNo = currentSemester?.semester_number;
+        if (currentSemester?.id && semNo) {
+          await academicPeriodService.ensureSemesterOfferings(currentSemester.id).catch(() => null);
+          const list = await courseService.getCurriculumCourses(program, level, semNo);
+          if (list.length > 0) {
+            setCourses(list);
+            return;
+          }
+        }
+      } catch {
+        // Fall through to the legacy program + level listing below.
+      }
+      try {
+        const data = await courseService.getCoursesByProgram(program, level);
+        setCourses(data);
+      } catch {
+        toast.error('Failed to load courses');
+      }
+    })().finally(() => setLoading(false));
+  }, [profile, currentSemester]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Courses</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">{courses.length} course{courses.length !== 1 ? 's' : ''} under your program</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
+          {courses.length} course{courses.length !== 1 ? 's' : ''} under your program
+          {currentSemester && ` · ${currentSemester.name}${currentYear ? ` (${currentYear.name})` : ''}`}
+        </p>
       </div>
 
       {loading ? (

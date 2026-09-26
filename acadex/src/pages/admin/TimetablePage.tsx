@@ -87,6 +87,9 @@ export function AdminTimetablePage() {
         _exceptions: scheduleData.exceptions.filter(e => e.recurring_schedule_id === s.id),
       })));
       if (sem?.semester) {
+        // Materialize any missing semester offerings from the reusable
+        // curriculum so new academic years work without re-entering courses.
+        await academicPeriodService.ensureSemesterOfferings(sem.semester.id).catch(() => null);
         const offs = await academicPeriodService.getOfferingsBySemester(sem.semester.id);
         setOfferings(offs.filter(o => o.program_id === profile.program && o.level === profile.level));
       }
