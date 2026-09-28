@@ -31,10 +31,15 @@ export function friendlyErrorMessage(err: unknown, fallback: string): string {
   }
   if (
     code === '42501' ||
-    code.startsWith('PGRST') ||
+    code.startsWith('PGRST3') ||
     /row-level security|permission denied|not permitted|jwt|token (expired|invalid)/i.test(msg)
   ) {
     return 'You do not have permission to perform this action.';
+  }
+  if (code.startsWith('PGRST2')) {
+    // Schema-cache codes (e.g. table/column not yet visible to the API):
+    // transient, never a permission problem. Do NOT misreport as one.
+    return 'Something went wrong on our end. Please refresh and try again.';
   }
   if (msg === 'FORBIDDEN') {
     return 'You do not have permission to perform this action.';
