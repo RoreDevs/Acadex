@@ -777,7 +777,7 @@ BEGIN
   v_students := (SELECT COUNT(*)::int FROM profiles WHERE role = 'student');
 
   CREATE TEMP TABLE _sa_sess ON COMMIT DROP AS
-  SELECT s.id, s.course_id, s.session_date, s.start_time, s.end_time, s.status, s.program_id, s.level, s.semester_id
+  SELECT s.id, s.course_id, s.title, s.session_date, s.start_time, s.end_time, s.status, s.program_id, s.level, s.semester_id
   FROM sessions s
   WHERE s.status <> 'cancelled'
     AND (s.status = 'closed' OR (s.session_date + s.end_time) <= now())
