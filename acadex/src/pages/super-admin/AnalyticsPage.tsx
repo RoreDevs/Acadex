@@ -46,7 +46,7 @@ export function SuperAdminAnalyticsPage() {
         }
         setData(result);
       })
-      .catch(() => toast.error('Failed to load analytics'))
+      .catch((err: any) => toast.error(`Analytics error: ${err?.message || err}`))
       .finally(() => setLoading(false));
   }, [semesterValue, startDate, endDate]);
 
