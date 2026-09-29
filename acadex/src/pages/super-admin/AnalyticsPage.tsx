@@ -10,6 +10,7 @@ import { TrendChart } from '@/components/analytics/TrendChart';
 import { RateBadge } from '@/components/analytics/AttendanceRateBar';
 import { academicPeriodService } from '@/services/academicPeriodService';
 import { analyticsService } from '@/services/analyticsService';
+import { friendlyErrorMessage } from '@/lib/utils';
 import { exportToCSV } from '@/utils/export';
 import type { SuperAdminAnalytics } from '@/types';
 import toast from 'react-hot-toast';
@@ -46,7 +47,7 @@ export function SuperAdminAnalyticsPage() {
         }
         setData(result);
       })
-      .catch((err: any) => toast.error(`Analytics error: ${err?.message || err}`))
+      .catch((err: any) => toast.error(friendlyErrorMessage(err, 'Failed to load analytics')))
       .finally(() => setLoading(false));
   }, [semesterValue, startDate, endDate]);
 
