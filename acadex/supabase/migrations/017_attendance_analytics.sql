@@ -530,7 +530,6 @@ BEGIN
   WHERE s.status <> 'cancelled'
     AND (s.status = 'closed' OR (s.session_date + s.end_time) <= now())
     AND (v_role <> 'admin' OR s.program_id::text = v_program)
-    AND (v_role <> 'admin' OR s.level = v_level)
     AND (p_semester_id IS NULL OR s.semester_id = p_semester_id)
     AND (p_start_date IS NULL OR s.session_date >= p_start_date)
     AND (p_end_date IS NULL OR s.session_date <= p_end_date);
@@ -540,8 +539,7 @@ BEGIN
   FROM _ov_sess s
   JOIN enrollments e ON e.course_id = s.course_id
   JOIN profiles p ON p.id = e.student_id AND p.role = 'student'
-  WHERE (v_role <> 'admin' OR p.program = v_program)
-    AND (v_role <> 'admin' OR p.level = v_level);
+  WHERE (v_role <> 'admin' OR p.program = v_program);
 
   CREATE TEMP TABLE _ov_att ON COMMIT DROP AS
   SELECT a.session_id, a.student_id, a.status
