@@ -209,4 +209,12 @@ export const academicPeriodService = {
     if (error || !data?.success) return 0;
     return (data.created as number) || 0;
   },
+
+  // Advance the current academic period once per promotion cycle.
+  // Safe to call after every class promotion: repeats are no-ops.
+  async advanceForPromotion(): Promise<any> {
+    const { data, error } = await supabase.rpc('advance_academic_period_for_promotion');
+    if (error) throw error;
+    return data as any;
+  },
 };

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { supabase } from '@/lib/supabase';
 import { academicPeriodService } from '@/services/academicPeriodService';
 import type { AcademicYear, Semester } from '@/types';
 
@@ -25,6 +26,20 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refresh();
+  }, [refresh]);
+
+  // Live-sync the current period across every open session: when a super
+  // admin sets a new current year/semester, all dashboards, banners and
+  // semester-scoped lists converge without a manual reload. Requires the
+  // tables in the realtime publication (one-time SQL). If not enabled,
+  // this silently does nothing and explicit refreshes still apply.
+  useEffect(() => {
+    const channel = supabase
+      .channel('academic-period')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'semesters' }, () => { refresh(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'academic_years' }, () => { refresh(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [refresh]);
 
   return (

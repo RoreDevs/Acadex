@@ -10,6 +10,8 @@ import { programService } from '@/services/programService';
 import { profileService } from '@/services/profileService';
 import { useAuth } from '@/contexts/AuthContext';
 import { friendlyErrorMessage } from '@/lib/utils';
+import { useCurrentAcademicPeriod } from '@/contexts/AcademicPeriodContext';
+import { academicPeriodService } from '@/services/academicPeriodService';
 import { auditService } from '@/services/auditService';
 import toast from 'react-hot-toast';
 
@@ -23,6 +25,7 @@ const PROMOTION_MAP: Record<string, string> = {
 
 export function PromotionsPage() {
   const { profile } = useAuth();
+  const { refresh: refreshPeriod } = useCurrentAcademicPeriod();
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
@@ -69,6 +72,19 @@ export function PromotionsPage() {
       // Move the view to the new level so the promoted class is shown
       // immediately (the loader effect refetches for the new selection).
       setSelectedLevel(newLevel);
+      // Roll the academic period forward once per cycle so dashboards
+      // follow the promotion (repeats are server-side no-ops).
+      try {
+        const res = await academicPeriodService.advanceForPromotion();
+        if (res?.success && res?.advanced) {
+          toast.success(`Academic period advanced to ${res.year} · ${res.semester}.`);
+          await refreshPeriod();
+        } else if (res && !res.success && res.error === 'NO_NEXT') {
+          toast(res.message || 'Set the next semester in Academic Periods to continue the new academic year.');
+        }
+      } catch {
+        // Level promotion already succeeded; period advance is best-effort.
+      }
     }
   };
 
