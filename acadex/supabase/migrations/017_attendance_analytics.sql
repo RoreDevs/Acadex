@@ -539,7 +539,8 @@ BEGIN
   FROM _ov_sess s
   JOIN enrollments e ON e.course_id = s.course_id
   JOIN profiles p ON p.id = e.student_id AND p.role = 'student'
-  WHERE (v_role <> 'admin' OR p.program = v_program);
+  WHERE (v_role <> 'admin' OR p.program = v_program)
+    AND (v_role <> 'admin' OR p.level = v_level);
 
   CREATE TEMP TABLE _ov_att ON COMMIT DROP AS
   SELECT a.session_id, a.student_id, a.status

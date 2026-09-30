@@ -68,10 +68,7 @@ export const profileService = {
     const { error } = await supabase
       .from('profiles')
       .update({ level: newLevel })
-      // Admins are created from students of a class cohort and every
-      // class-scoped query is filtered by the viewer's own level, so the
-      // class admin(s) must move with their students. super_admin excluded.
-      .in('role', ['student', 'admin'])
+      .eq('role', 'student')
       .eq('program', program)
       .eq('level', currentLevel);
     return { error };
