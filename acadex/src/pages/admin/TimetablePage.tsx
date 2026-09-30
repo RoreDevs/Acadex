@@ -24,8 +24,6 @@ import { timetableService } from '@/services/timetableService';
 import type {
   RecurringSchedule,
   ScheduleException,
-  CourseOffering,
-  Course,
 } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -46,12 +44,12 @@ interface ScheduleWithMeta extends RecurringSchedule {
 export function AdminTimetablePage() {
   const { profile } = useAuth();
   const [schedules, setSchedules] = useState<ScheduleWithMeta[]>([]);
-  const [offerings, setOfferings] = useState<CourseOffering[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<RecurringSchedule | null>(null);
-  const [formCourseOfferingId, setFormCourseOfferingId] = useState('');
+  const [formCourseId, setFormCourseId] = useState('');
   const [formDayOfWeek, setFormDayOfWeek] = useState('1');
   const [formStartTime, setFormStartTime] = useState('08:00');
   const [formEndTime, setFormEndTime] = useState('10:00');
@@ -78,21 +76,15 @@ export function AdminTimetablePage() {
     if (!profile) return;
     setLoading(true);
     try {
-      const [scheduleData, sem] = await Promise.all([
+      const [scheduleData, courseList] = await Promise.all([
         timetableService.adminGetSchedules(),
-        academicPeriodService.getCurrentPeriod(),
+        courseService.getCoursesByProgram(profile.program!, profile.level!).catch(() => []),
       ]);
       setSchedules(scheduleData.schedules.map(s => ({
         ...s,
         _exceptions: scheduleData.exceptions.filter(e => e.recurring_schedule_id === s.id),
       })));
-      if (sem?.semester) {
-        // Materialize any missing semester offerings from the reusable
-        // curriculum so new academic years work without re-entering courses.
-        await academicPeriodService.ensureSemesterOfferings(sem.semester.id).catch(() => null);
-        const offs = await academicPeriodService.getOfferingsBySemester(sem.semester.id);
-        setOfferings(offs.filter(o => o.program_id === profile.program && o.level === profile.level));
-      }
+      setCourses(courseList);
     } catch {
       toast.error('Failed to load timetable');
     } finally {
@@ -103,7 +95,7 @@ export function AdminTimetablePage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const resetScheduleForm = () => {
-    setFormCourseOfferingId('');
+    setFormCourseId('');
     setFormDayOfWeek('1');
     setFormStartTime('08:00');
     setFormEndTime('10:00');
@@ -116,7 +108,7 @@ export function AdminTimetablePage() {
   const openCreateSchedule = () => { resetScheduleForm(); setShowScheduleForm(true); };
 
   const openEditSchedule = (s: RecurringSchedule) => {
-    setFormCourseOfferingId(s.course_offering_id);
+    setFormCourseId(s.course_id || '');
     setFormDayOfWeek(String(s.day_of_week));
     setFormStartTime(s.start_time.substring(0, 5));
     setFormEndTime(s.end_time.substring(0, 5));
@@ -128,12 +120,30 @@ export function AdminTimetablePage() {
   };
 
   const submitSchedule = async () => {
-    if (!formCourseOfferingId || !formEffectiveStart || !formEffectiveEnd) {
+    if (!profile) return;
+    if (!formCourseId || !formEffectiveStart || !formEffectiveEnd) {
       toast.error('Please fill all required fields');
       return;
     }
     setFormLoading(true);
     try {
+      // Resolve the current-semester offering for the chosen course,
+      // creating it if this course has no offering yet this semester.
+      const period = await academicPeriodService.getCurrentPeriod();
+      const semesterId = period.semester?.id;
+      if (!semesterId) {
+        toast.error('No current semester is set. Set one in Academic Periods first.');
+        setFormLoading(false);
+        return;
+      }
+      const offering = await academicPeriodService.getCurrentOffering(
+        formCourseId, profile.program!, profile.level!, semesterId,
+      );
+      if (!offering?.id) {
+        toast.error('Could not resolve a course offering for this course.');
+        setFormLoading(false);
+        return;
+      }
       if (editingSchedule) {
         await timetableService.adminUpdateSchedule(editingSchedule.id, {
           day_of_week: Number(formDayOfWeek),
@@ -146,7 +156,7 @@ export function AdminTimetablePage() {
         toast.success('Schedule updated');
       } else {
         await timetableService.adminCreateSchedule({
-          course_offering_id: formCourseOfferingId,
+          course_offering_id: offering.id,
           day_of_week: Number(formDayOfWeek),
           start_time: formStartTime,
           end_time: formEndTime,
@@ -404,12 +414,12 @@ export function AdminTimetablePage() {
           <div className="space-y-4 py-2">
             <div>
               <Label>Course</Label>
-              <Select value={formCourseOfferingId} onValueChange={setFormCourseOfferingId}>
+              <Select value={formCourseId} onValueChange={setFormCourseId} disabled={!!editingSchedule}>
                 <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
                 <SelectContent>
-                  {offerings.map(o => (
+                  {courses.map(o => (
                     <SelectItem key={o.id} value={o.id}>
-                      {o.courses?.code} — {o.courses?.title}
+                      {o.code} — {o.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
