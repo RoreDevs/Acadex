@@ -1,6 +1,7 @@
 # Acadex - University Attendance Management System
 
-A modern, production-ready university attendance management system built with React, TypeScript, Supabase, and Tailwind CSS.
+A modern, production-ready university attendance management system built with React, TypeScript, Supabase, and Tailwind CSS. Created and developed by Rosemary Boahemaa Dwamena.
+Godfred Eduful — Contributor.
 
 ## Tech Stack
 
