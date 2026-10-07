@@ -113,6 +113,7 @@ export function MarkAttendancePage() {
           break;
         default:
           setErrorMessage(result.message || 'Failed to mark attendance.');
+          toast.error(result.message || 'Failed to mark attendance.');
           setStage('preview');
       }
       return;
@@ -193,12 +194,14 @@ export function MarkAttendancePage() {
       const { result, error } = await attendanceService.markAttendanceByCode(sessionInfo.code, coords || { latitude: 0, longitude: 0 });
       if (error) {
         setErrorMessage(error.message);
+        toast.error(error.message || 'Failed to mark attendance. Please try again.');
         setStage('preview');
         return;
       }
       handleMarkResult(result);
     } catch {
       setErrorMessage('Failed to process attendance. Please try again.');
+      toast.error('Failed to process attendance. Please try again.');
       setStage('preview');
     }
   };

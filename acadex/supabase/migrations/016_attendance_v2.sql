@@ -181,11 +181,15 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'FORBIDDEN', 'message', 'Only students can mark attendance.');
   END IF;
 
-  -- Enrollment is checked server-side (not trusted from the client).
+  -- Enrollment is derived from the student's program + level matching the
+  -- session cohort (the same rule the student course list uses). No explicit
+  -- enrollment record is required.
   IF NOT EXISTS (
     SELECT 1 FROM sessions s
-    JOIN enrollments e ON e.course_id = s.course_id
-    WHERE s.id = p_session_id AND e.student_id = auth.uid()
+    JOIN profiles p ON p.id = auth.uid()
+    WHERE s.id = p_session_id
+      AND p.program = s.program_id::text
+      AND p.level = s.level
   ) THEN
     RETURN jsonb_build_object('success', false, 'error', 'NOT_ENROLLED', 'message', 'You are not enrolled in this course.');
   END IF;
@@ -368,8 +372,10 @@ BEGIN
 
   IF auth.uid() IS NOT NULL THEN
     SELECT EXISTS (
-      SELECT 1 FROM enrollments e
-      WHERE e.st-udent_id = auth.uid() AND e.course_id = v_session.course_id
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.program = v_session.program_id::text
+        AND p.level = v_session.level
     ) INTO v_enrolled;
 
     SELECT EXISTS (
