@@ -175,9 +175,10 @@ DECLARE
   v_loc_verified BOOLEAN;
   v_radius_used INT;
 BEGIN
-  -- Only a student may create their own attendance record.
+  -- Only a student (or a course-rep admin, who is still a student) may
+  -- create their own attendance record. super_admin is excluded.
   SELECT role INTO v_role FROM profiles WHERE id = auth.uid();
-  IF v_role IS NULL OR v_role <> 'student' THEN
+  IF v_role IS NULL OR v_role NOT IN ('student', 'admin') THEN
     RETURN jsonb_build_object('success', false, 'error', 'FORBIDDEN', 'message', 'Only students can mark attendance.');
   END IF;
 
