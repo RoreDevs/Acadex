@@ -182,7 +182,7 @@ BEGIN
   matched AS (
     SELECT s.d AS occurrence_date
     FROM series s
-    WHERE EXTRACT(ISODOW FROM s.d)::int = v_rec.day_of_week
+    WHERE EXTRACT(DOW FROM s.d)::int = v_rec.day_of_week
       AND s.d >= p_start
       AND s.d <= p_end
   )
@@ -211,7 +211,7 @@ DECLARE
   v_result JSONB;
 BEGIN
   SELECT get_user_role() INTO v_role;
-  IF v_role IS NULL OR v_role <> 'student' THEN
+  IF v_role IS NULL OR v_role NOT IN ('student', 'admin') THEN
     RETURN jsonb_build_object('success', false, 'error', 'FORBIDDEN');
   END IF;
 
@@ -220,13 +220,11 @@ BEGIN
   WITH enrolled_offerings AS (
     SELECT co.id AS offering_id, co.course_id, co.program_id, co.level,
            c.code AS course_code, c.title AS course_title
-    FROM enrollments e
-    JOIN courses c ON c.id = e.course_id
-    JOIN course_offerings co ON co.course_id = e.course_id
-      AND co.program_id::text = v_program
+    FROM course_offerings co
+    JOIN courses c ON c.id = co.course_id
+    WHERE co.program_id::text = v_program
       AND co.level = v_level
       AND co.is_active = TRUE
-    WHERE e.student_id = auth.uid()
   ),
   expanded AS (
     SELECT
@@ -333,7 +331,7 @@ DECLARE
   v_result JSONB;
 BEGIN
   SELECT get_user_role() INTO v_role;
-  IF v_role IS NULL OR v_role <> 'student' THEN
+  IF v_role IS NULL OR v_role NOT IN ('student', 'admin') THEN
     RETURN jsonb_build_object('success', false, 'error', 'FORBIDDEN');
   END IF;
 
@@ -343,13 +341,11 @@ BEGIN
   WITH enrolled_offerings AS (
     SELECT co.id AS offering_id, co.course_id, co.program_id, co.level,
            c.code AS course_code, c.title AS course_title
-    FROM enrollments e
-    JOIN courses c ON c.id = e.course_id
-    JOIN course_offerings co ON co.course_id = e.course_id
-      AND co.program_id::text = v_program
+    FROM course_offerings co
+    JOIN courses c ON c.id = co.course_id
+    WHERE co.program_id::text = v_program
       AND co.level = v_level
       AND co.is_active = TRUE
-    WHERE e.student_id = auth.uid()
   ),
   expanded AS (
     SELECT

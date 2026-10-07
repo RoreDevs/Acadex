@@ -43,9 +43,7 @@ CREATE POLICY "Students can view assignments for their program"
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
       AND profiles.role = 'student'
-      AND profiles.program = (
-        SELECT code FROM programs WHERE id = assignments.program_id
-      )
+      AND profiles.program = assignments.program_id::text
     )
   );
 
