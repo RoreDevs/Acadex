@@ -1,7 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const url = 'https://shmsnfghoauljbmwulei.supabase.co';
-const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNobXNuZmdob2F1bGpibXd1bGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2Mjk5MzEsImV4cCI6MjA5MzIwNTkzMX0.WG0D2P4pSAerO40PXpagldDLnTv3unP2nRsscTZePbQ';
+const url = process.env.VITE_SUPABASE_URL;
+const key = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!url || !key) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Run with: node --env-file=.env <script>');
+}
 
 const sup = createClient(url, key);
 

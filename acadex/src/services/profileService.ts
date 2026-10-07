@@ -79,15 +79,15 @@ export const profileService = {
 
     // A class admin can end up on a stale level if a promotion ran before
     // admins were included in the update above. Bring any admin of this
-    // program whose level is out of sync forward to the class's new level so
-    // the cohort ends up consistent (admins already at the new level are
-    // left untouched).
+    // program whose level has fallen behind forward to the class's new level
+    // so the cohort ends up consistent. Only lower levels are moved, so an
+    // admin already at or ahead of the new level is never pulled back down.
     const { error: adminError } = await supabase
       .from('profiles')
       .update({ level: newLevel })
       .eq('role', 'admin')
       .eq('program', program)
-      .neq('level', newLevel);
+      .lt('level', newLevel);
 
     return { error: adminError };
   },

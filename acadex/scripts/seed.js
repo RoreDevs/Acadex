@@ -1,13 +1,16 @@
-// Run this in your browser console when logged into Acadex
-// Or use Node.js: node scripts/seed.js
+// Run with Node.js: node --env-file=.env scripts/seed.js
+
+const url = process.env.VITE_SUPABASE_URL;
+const key = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!url || !key) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Run with: node --env-file=.env <script>');
+}
 
 async function seedDatabase() {
   const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-  
-  const supabase = createClient(
-    'https://shmsnfghoauljbmwulei.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNobXNuZmdob2F1bGpibXd1bGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2Mjk5MzEsImV4cCI6MjA5MzIwNTkzMX0.WG0D2P4pSAerO40PXpagldDLnTv3unP2nRsscTZePbQ'
-  );
+
+  const supabase = createClient(url, key);
 
   const programs = [
     { name: 'BTECH ICT', code: 'BTECH-ICT' },

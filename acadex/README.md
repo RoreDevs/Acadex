@@ -129,6 +129,18 @@ npm run build
 
 Output will be in the `dist/` directory.
 
+## Running Dev Scripts
+
+Helper scripts under `scripts/` (e.g. `seed.js`, `migrate.cjs`, `fix-rls.js`) read
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from the environment. Load your `.env`
+file when running them:
+
+```bash
+node --env-file=.env scripts/seed.js
+```
+
+`node --env-file` requires Node.js 20.6+.
+
 ## Project Structure
 
 ```
