@@ -68,10 +68,28 @@ export const profileService = {
     const { error } = await supabase
       .from('profiles')
       .update({ level: newLevel })
-      .eq('role', 'student')
+      // Admins are created from students of a class cohort and every
+      // class-scoped query is filtered by the viewer's own level, so the
+      // class admin(s) must move with their students. super_admin excluded.
+      .in('role', ['student', 'admin'])
       .eq('program', program)
       .eq('level', currentLevel);
-    return { error };
+
+    if (error) return { error };
+
+    // A class admin can end up on a stale level if a promotion ran before
+    // admins were included in the update above. Bring any admin of this
+    // program whose level is out of sync forward to the class's new level so
+    // the cohort ends up consistent (admins already at the new level are
+    // left untouched).
+    const { error: adminError } = await supabase
+      .from('profiles')
+      .update({ level: newLevel })
+      .eq('role', 'admin')
+      .eq('program', program)
+      .neq('level', newLevel);
+
+    return { error: adminError };
   },
 
   async superAdminExists(): Promise<boolean> {
