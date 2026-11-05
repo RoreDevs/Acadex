@@ -40,10 +40,7 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Mark Attendance', icon: <QrCode className="w-5 h-5" />, href: '/mark-attendance' },
     { label: 'Records', icon: <ClipboardList className="w-5 h-5" />, href: '/records' },
     { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/analytics' },
-    { label: 'Timetable', icon: <Calendar className="w-5 h-5" />, href: '/timetable' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/courses' },
-    { label: 'Slides', icon: <Presentation className="w-5 h-5" />, href: '/slides' },
-    { label: 'Assignments', icon: <ListChecks className="w-5 h-5" />, href: '/assignments' },
     { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/notifications' },
   ];
 
@@ -51,12 +48,9 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/admin/dashboard' },
     { label: 'Students', icon: <Users className="w-5 h-5" />, href: '/admin/students' },
     { label: 'Sessions', icon: <Calendar className="w-5 h-5" />, href: '/admin/sessions' },
-    { label: 'Timetable', icon: <CalendarRange className="w-5 h-5" />, href: '/admin/timetable' },
     { label: 'Generate Session', icon: <QrCode className="w-5 h-5" />, href: '/admin/generate-session' },
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/admin/attendance' },
     { label: 'Courses', icon: <BookOpen className="w-5 h-5" />, href: '/admin/courses' },
-    { label: 'Slides', icon: <Presentation className="w-5 h-5" />, href: '/admin/slides' },
-    { label: 'Assignments', icon: <ListChecks className="w-5 h-5" />, href: '/admin/assignments' },
     { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/admin/analytics' },
     { label: 'Notifications', icon: <Bell className="w-5 h-5" />, href: '/notifications' },
   ];
@@ -71,8 +65,6 @@ export function Sidebar({ role, isAdminView, onToggleView }: SidebarProps) {
     { label: 'Sessions', icon: <Calendar className="w-5 h-5" />, href: '/super-admin/sessions' },
     { label: 'Attendance', icon: <ClipboardList className="w-5 h-5" />, href: '/super-admin/attendance' },
     { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/super-admin/analytics' },
-    { label: 'Slides', icon: <Presentation className="w-5 h-5" />, href: '/super-admin/slides' },
-    { label: 'Assignments', icon: <ListChecks className="w-5 h-5" />, href: '/super-admin/assignments' },
     { label: 'Promotions', icon: <Activity className="w-5 h-5" />, href: '/super-admin/promotions' },
     { label: 'Academic Periods', icon: <CalendarRange className="w-5 h-5" />, href: '/super-admin/academic' },
     { label: 'Audit Logs', icon: <FileText className="w-5 h-5" />, href: '/super-admin/audit' },
