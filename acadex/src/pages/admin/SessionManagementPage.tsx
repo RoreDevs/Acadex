@@ -36,10 +36,8 @@ export function SessionManagementPage() {
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  if (!profile) return null;
-
   const filteredSessions = (sessions || []).filter(
-    (s: any) => s.program_id === profile.program && s.level === profile.level
+    (s: any) => !!profile && s.program_id === profile.program && s.level === profile.level
   );
 
   useEffect(() => {
@@ -53,6 +51,10 @@ export function SessionManagementPage() {
       .catch(() => { if (!cancelled) setQrUrl(null); });
     return () => { cancelled = true; };
   }, [qrSession]);
+
+  // Hooks above must run unconditionally: this early return is only safe
+  // after every hook call, otherwise the hook order changes between renders.
+  if (!profile) return null;
 
   const handleSetStatus = async (id: string, status: 'open' | 'closed' | 'cancelled') => {
     setBusyId(id);

@@ -18,7 +18,12 @@ export function AdminStudentsPage() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (!profile?.program || !profile?.level) return;
+    if (!profile) return; // profile still loading — keep the spinner
+    if (!profile.program || !profile.level) {
+      // Nothing to query: stop the spinner instead of hanging forever.
+      setLoading(false);
+      return;
+    }
     profileService.getStudentsByProgram(profile.program, profile.level)
       .then(setStudents)
       .catch(() => toast.error('Failed to load students'))

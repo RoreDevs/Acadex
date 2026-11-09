@@ -9,6 +9,8 @@ interface AuthContextType {
   loading: boolean;
   recovering: boolean;
   clearRecovery: () => void;
+  profileError: string | null;
+  retryProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (data: {
     email: string;
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [recovering, setRecovering] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const loading = authLoading || (user !== null && profileLoading);
 
@@ -47,15 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error('fetchProfile error:', error.message);
       setProfile(null);
+      setProfileError(error.message);
       setProfileLoading(false);
       return false;
     }
     if (data) {
       setProfile(data as UserProfile);
+      setProfileError(null);
       setProfileLoading(false);
       return true;
     }
     setProfile(null);
+    setProfileError('Your profile could not be found.');
     setProfileLoading(false);
     return false;
   };
@@ -64,13 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       setUser(session.user);
-      const ok = await fetchProfile(session.user.id);
-      if (!ok) {
-        await supabase.auth.signOut();
-        setUser(null);
-        setProfile(null);
-        setProfileLoading(false);
-      }
+      // Keep the session on failure: the guards render a recoverable error
+      // screen instead of stranding the user on a loading spinner.
+      await fetchProfile(session.user.id);
     } else {
       setUser(null);
       setProfile(null);
@@ -85,13 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         if (isRecovery) setRecovering(true);
         setUser(session.user);
-        const ok = await fetchProfile(session.user.id);
-        if (!ok) {
-          await supabase.auth.signOut();
-          setUser(null);
-          setProfile(null);
-          setProfileLoading(false);
-        }
+        await fetchProfile(session.user.id);
       } else {
         setProfileLoading(false);
       }
@@ -101,16 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
-        const ok = await fetchProfile(session.user.id);
-        if (!ok && event !== 'SIGNED_IN') {
-          await supabase.auth.signOut();
-          setUser(null);
-          setProfile(null);
-          setProfileLoading(false);
-        }
+        await fetchProfile(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
+        setProfileError(null);
         setProfileLoading(false);
       } else {
         await recoverSession();
@@ -122,11 +113,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error && authData.user) {
+    if (error) return { error: error.message };
+    if (authData.user) {
       setUser(authData.user);
-      await fetchProfile(authData.user.id);
+      const ok = await fetchProfile(authData.user.id);
+      if (!ok) {
+        return { error: 'Signed in, but your profile could not be loaded. Please retry or contact support.' };
+      }
     }
-    return { error: error?.message || null };
+    return { error: null };
   };
 
   const signUp = async (data: {
@@ -192,12 +187,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    setProfileError(null);
+    setProfileLoading(false);
   };
 
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
     }
+  };
+
+  const retryProfile = async () => {
+    if (!user) return;
+    setProfileError(null);
+    await fetchProfile(user.id);
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
@@ -229,6 +232,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         recovering,
         clearRecovery,
+        profileError,
+        retryProfile,
         signIn,
         signUp,
         signOut,

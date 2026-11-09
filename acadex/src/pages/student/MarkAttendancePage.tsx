@@ -141,8 +141,10 @@ export function MarkAttendancePage() {
       if (result.status === 'cancelled') setStage('cancelled');
       else if (result.status === 'closed') setStage('closed');
       else if (result.already_marked) setStage('already_marked');
-      else if (!result.enrolled) setStage('not_enrolled');
+      // The window is checked before eligibility: a student must never be
+      // told they are "not enrolled" only because the session has not opened.
       else if (result.status === 'scheduled') setStage('not_open');
+      else if (!result.enrolled) setStage('not_enrolled');
       else setStage('preview');
     },
     []
