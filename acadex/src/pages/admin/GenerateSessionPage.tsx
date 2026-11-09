@@ -40,9 +40,31 @@ export function GenerateSessionPage() {
   const [classroomLocation, setClassroomLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
-    if (!profile) return;
-    courseService.getCoursesByProgram(profile.program!, profile.level!).then(setCourses);
-  }, [profile]);
+    if (!profile?.program || !profile?.level) return;
+    const program = profile.program;
+    const level = profile.level;
+    (async () => {
+      // Curriculum first: a course registered for this cohort must be
+      // selectable even when its legacy courses.level disagrees.
+      try {
+        const semesterNumber = currentSemester?.semester_number;
+        if (semesterNumber) {
+          const registered = await courseService.getCurriculumCourses(program, level, semesterNumber);
+          if (registered.length > 0) {
+            setCourses(registered);
+            return;
+          }
+        }
+      } catch {
+        // Fall through to the legacy listing below.
+      }
+      try {
+        setCourses(await courseService.getCoursesByProgram(program, level));
+      } catch {
+        toast.error('Failed to load courses');
+      }
+    })();
+  }, [profile?.program, profile?.level, currentSemester]);
 
   const captureLocation = () => {
     if (!navigator.geolocation) {
@@ -96,15 +118,48 @@ export function GenerateSessionPage() {
       return;
     }
 
+    // The session cohort must come from the COURSE, never from the creating
+    // admin's profile: an admin whose own level is stale would otherwise
+    // stamp every session with the wrong cohort and lock out the whole class.
+    const courseProgramId: string = course.program_id || profile.program || '';
+    const courseLevel: string = course.level || profile.level || '';
+
+    if (!courseProgramId || !courseLevel) {
+      toast.error('This course has no programme or level configured.');
+      setLoading(false);
+      return;
+    }
+    if (profile.program && course.program_id && course.program_id !== profile.program) {
+      toast.error('This course belongs to a different programme.');
+      setLoading(false);
+      return;
+    }
+
     let semesterId: string | undefined;
     let offeringId: string | undefined;
     if (currentSemester?.id) {
       semesterId = currentSemester.id;
       try {
+        // The course must be registered for this cohort in the current
+        // semester's curriculum before a session can be created for it.
+        const registered = await courseService.getCurriculumCourses(
+          courseProgramId,
+          courseLevel,
+          currentSemester.semester_number,
+        );
+        if (registered.length > 0 && !registered.some((c) => c.id === course.id)) {
+          toast.error('This course is not registered in the curriculum for this semester.');
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Guard only: a failed curriculum lookup must not block session creation.
+      }
+      try {
         const offering = await academicPeriodService.getCurrentOffering(
           data.course_id,
-          profile.program!,
-          profile.level!,
+          courseProgramId,
+          courseLevel,
           currentSemester.id,
         );
         offeringId = offering?.id;
@@ -122,8 +177,8 @@ export function GenerateSessionPage() {
       session_date: data.session_date,
       start_time: data.start_time,
       end_time: data.end_time,
-      program_id: profile.program!,
-      level: profile.level!,
+      program_id: courseProgramId,
+      level: courseLevel,
       course_code: course.code,
       created_by: profile.id,
       latitude: classroomLocation?.latitude,
